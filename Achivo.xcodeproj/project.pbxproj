@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		26E542EF2FA740DF007C1F63 /* Achivo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Achivo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		26E542EF2FA740DF007C1F63 /* Achivo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Achivo.app; path = /Users/deemahalhazmi/Desktop/ADA/Achivo/build/Debug/Achivo.app; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -33,16 +33,7 @@
 			isa = PBXGroup;
 			children = (
 				26E542F12FA740DF007C1F63 /* Achivo */,
-				26E542F02FA740DF007C1F63 /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		26E542F02FA740DF007C1F63 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				26E542EF2FA740DF007C1F63 /* Achivo.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -95,7 +86,7 @@
 			mainGroup = 26E542E62FA740DF007C1F63;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 26E542F02FA740DF007C1F63 /* Products */;
+			productRefGroup = 26E542E62FA740DF007C1F63;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
