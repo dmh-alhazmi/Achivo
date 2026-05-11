@@ -6,14 +6,85 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		26E543472FB1C959007C1F63 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26E543462FB1C959007C1F63 /* WidgetKit.framework */; };
+		26E543492FB1C959007C1F63 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26E543482FB1C959007C1F63 /* SwiftUI.framework */; };
+		26E5435A2FB1C95A007C1F63 /* AchivoWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 26E543442FB1C959007C1F63 /* AchivoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		26E543582FB1C95A007C1F63 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 26E542E72FA740DF007C1F63 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 26E543432FB1C959007C1F63;
+			remoteInfo = AchivoWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		26E5435F2FB1C95A007C1F63 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				26E5435A2FB1C95A007C1F63 /* AchivoWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		26E542EF2FA740DF007C1F63 /* Achivo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Achivo.app; path = /Users/deemahalhazmi/Desktop/ADA/Achivo/build/Debug/Achivo.app; sourceTree = "<absolute>"; };
+		26E543392FB1C44F007C1F63 /* Achivo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Achivo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		26E543442FB1C959007C1F63 /* AchivoWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AchivoWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		26E543462FB1C959007C1F63 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		26E543482FB1C959007C1F63 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		26E5433C2FB1C483007C1F63 /* Exceptions for "Achivo" folder in "Achivo" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 26E542EE2FA740DF007C1F63 /* Achivo */;
+		};
+		26E5435E2FB1C95A007C1F63 /* Exceptions for "AchivoWidget" folder in "AchivoWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 26E543432FB1C959007C1F63 /* AchivoWidgetExtension */;
+		};
+		26E543612FB1CA2A007C1F63 /* Exceptions for "Achivo" folder in "AchivoWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Model/EnergyNotificationProfile.swift,
+				Model/GrowthEnergy.swift,
+				ViewModel/EnergyNotificationContent.swift,
+			);
+			target = 26E543432FB1C959007C1F63 /* AchivoWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		26E542F12FA740DF007C1F63 /* Achivo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				26E5433C2FB1C483007C1F63 /* Exceptions for "Achivo" folder in "Achivo" target */,
+				26E543612FB1CA2A007C1F63 /* Exceptions for "Achivo" folder in "AchivoWidgetExtension" target */,
+			);
 			path = Achivo;
+			sourceTree = "<group>";
+		};
+		26E5434A2FB1C959007C1F63 /* AchivoWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				26E5435E2FB1C95A007C1F63 /* Exceptions for "AchivoWidget" folder in "AchivoWidgetExtension" target */,
+			);
+			path = AchivoWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -26,6 +97,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		26E543412FB1C959007C1F63 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26E543492FB1C959007C1F63 /* SwiftUI.framework in Frameworks */,
+				26E543472FB1C959007C1F63 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -33,7 +113,20 @@
 			isa = PBXGroup;
 			children = (
 				26E542F12FA740DF007C1F63 /* Achivo */,
+				26E543392FB1C44F007C1F63 /* Achivo.app */,
+				26E543442FB1C959007C1F63 /* AchivoWidgetExtension.appex */,
+				26E5434A2FB1C959007C1F63 /* AchivoWidget */,
+				26E543452FB1C959007C1F63 /* Frameworks */,
 			);
+			sourceTree = "<group>";
+		};
+		26E543452FB1C959007C1F63 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				26E543462FB1C959007C1F63 /* WidgetKit.framework */,
+				26E543482FB1C959007C1F63 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -46,10 +139,12 @@
 				26E542EB2FA740DF007C1F63 /* Sources */,
 				26E542EC2FA740DF007C1F63 /* Frameworks */,
 				26E542ED2FA740DF007C1F63 /* Resources */,
+				26E5435F2FB1C95A007C1F63 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				26E543592FB1C95A007C1F63 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				26E542F12FA740DF007C1F63 /* Achivo */,
@@ -58,8 +153,30 @@
 			packageProductDependencies = (
 			);
 			productName = Achivo;
-			productReference = 26E542EF2FA740DF007C1F63 /* Achivo.app */;
+			productReference = 26E543392FB1C44F007C1F63 /* Achivo.app */;
 			productType = "com.apple.product-type.application";
+		};
+		26E543432FB1C959007C1F63 /* AchivoWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 26E5435B2FB1C95A007C1F63 /* Build configuration list for PBXNativeTarget "AchivoWidgetExtension" */;
+			buildPhases = (
+				26E543402FB1C959007C1F63 /* Sources */,
+				26E543412FB1C959007C1F63 /* Frameworks */,
+				26E543422FB1C959007C1F63 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				26E5434A2FB1C959007C1F63 /* AchivoWidget */,
+			);
+			name = AchivoWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = AchivoWidgetExtension;
+			productReference = 26E543442FB1C959007C1F63 /* AchivoWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -72,6 +189,9 @@
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					26E542EE2FA740DF007C1F63 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
+					26E543432FB1C959007C1F63 = {
 						CreatedOnToolsVersion = 26.4.1;
 					};
 				};
@@ -91,12 +211,20 @@
 			projectRoot = "";
 			targets = (
 				26E542EE2FA740DF007C1F63 /* Achivo */,
+				26E543432FB1C959007C1F63 /* AchivoWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		26E542ED2FA740DF007C1F63 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		26E543422FB1C959007C1F63 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -113,7 +241,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		26E543402FB1C959007C1F63 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		26E543592FB1C95A007C1F63 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 26E543432FB1C959007C1F63 /* AchivoWidgetExtension */;
+			targetProxy = 26E543582FB1C95A007C1F63 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		26E542FA2FA740E0007C1F63 /* Debug */ = {
@@ -237,6 +380,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Achivo/Achivo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YM2L953M9C;
@@ -245,6 +389,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Achivo/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -282,6 +427,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Achivo/Achivo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YM2L953M9C;
@@ -290,6 +436,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Achivo/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -322,6 +469,71 @@
 			};
 			name = Release;
 		};
+		26E5435C2FB1C95A007C1F63 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YM2L953M9C;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AchivoWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AchivoWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Achivo.Deemah.com.Achivo.AchivoWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		26E5435D2FB1C95A007C1F63 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YM2L953M9C;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AchivoWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AchivoWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Achivo.Deemah.com.Achivo.AchivoWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -339,6 +551,15 @@
 			buildConfigurations = (
 				26E542FD2FA740E0007C1F63 /* Debug */,
 				26E542FE2FA740E0007C1F63 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		26E5435B2FB1C95A007C1F63 /* Build configuration list for PBXNativeTarget "AchivoWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				26E5435C2FB1C95A007C1F63 /* Debug */,
+				26E5435D2FB1C95A007C1F63 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
