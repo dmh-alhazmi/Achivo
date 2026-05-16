@@ -5,14 +5,14 @@
 //  Created by Deemah Alhazmi on 11/05/2026.
 //
 
-
 import SwiftUI
 
 enum GrowthEnergy: String, CaseIterable, Identifiable, Codable {
-    case bluey
+    case fiery
     case greeny
     case sunny
-    case fiery
+    case bluey
+    
     
     var id: String { rawValue }
     
@@ -55,16 +55,29 @@ enum GrowthEnergy: String, CaseIterable, Identifiable, Codable {
         }
     }
     
+    var bestFor: String {
+        switch self {
+        case .bluey:
+            return "self-care & well-being"
+        case .greeny:
+            return "habits & consistency"
+        case .sunny:
+            return "new beginnings"
+        case .fiery:
+            return "goals & high performance"
+        }
+    }
+    
     var assetName: String {
         switch self {
         case .bluey:
-            return "bluee"
+            return "bluey_icon"
         case .greeny:
-            return "Grenny"
+            return "greeny_icon"
         case .sunny:
-            return "Yellowwy"
+            return "sunny_icon"
         case .fiery:
-            return "Reddy"
+            return "mewo"
         }
     }
     
