@@ -5,23 +5,56 @@
 //  Created by Deemah Alhazmi on 14/05/2026.
 //
 
+
 import SwiftUI
 import SwiftData
 
 struct AddGoalView: View {
     
+    
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppRouter.self) private var router
     
     @State private var showingEnergyInfo: GrowthEnergy?
+    @State private var showingCustomDatePicker: Bool = false
+    
     @State private var goalTitle: String = ""
     @State private var reminderAction: String = ""
     @State private var selectedDuration: GoalDuration = .oneWeek
     @State private var selectedEnergy: GrowthEnergy = .sunny
     
+    @State private var customStartDate: Date = Date()
+    @State private var customEndDate: Date = Calendar.current.date(
+        byAdding: .day,
+        value: 7,
+        to: Date()
+    ) ?? Date()
+    
     private var canCreateGoal: Bool {
         !goalTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !reminderAction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    private var finalDurationDays: Int {
+        selectedDuration == .custom ? customDurationDays : selectedDuration.days
+    }
+    
+    private var goalStartDate: Date {
+        selectedDuration == .custom ? customStartDate : Date()
+    }
+    
+    private var customDurationDays: Int {
+        let start = Calendar.current.startOfDay(for: customStartDate)
+        let end = Calendar.current.startOfDay(for: customEndDate)
+        
+        let days = Calendar.current.dateComponents(
+            [.day],
+            from: start,
+            to: end
+        ).day ?? 0
+        
+        return max(days + 1, 1)
     }
     
     var body: some View {
@@ -46,6 +79,17 @@ struct AddGoalView: View {
             GrowthEnergyInfoSheet(energy: energy)
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showingCustomDatePicker) {
+            CustomDurationSheet(
+                startDate: $customStartDate,
+                endDate: $customEndDate
+            ) {
+                selectedDuration = .custom
+                showingCustomDatePicker = false
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
         }
     }
 }
@@ -190,9 +234,13 @@ private extension AddGoalView {
         let isSelected = selectedDuration == duration
         
         return Button {
-            selectedDuration = duration
+            if duration == .custom {
+                showingCustomDatePicker = true
+            } else {
+                selectedDuration = duration
+            }
         } label: {
-            Text(duration.title)
+            Text(durationTitle(for: duration))
                 .font(.caption)
                 .fontWeight(.medium)
                 .foregroundStyle(isSelected ? .white : .black.opacity(0.75))
@@ -212,6 +260,14 @@ private extension AddGoalView {
         }
         .buttonStyle(.plain)
     }
+    
+    func durationTitle(for duration: GoalDuration) -> String {
+        if duration == .custom && selectedDuration == .custom {
+            return "\(customDurationDays) Days"
+        }
+        
+        return duration.title
+    }
 }
 
 // MARK: - Logic
@@ -222,20 +278,24 @@ private extension AddGoalView {
         let goal = Goal(
             title: goalTitle.trimmingCharacters(in: .whitespacesAndNewlines),
             subGoal: reminderAction.trimmingCharacters(in: .whitespacesAndNewlines),
-            durationDays: selectedDuration.days,
-            selectedEnergy: selectedEnergy
+            durationDays: finalDurationDays,
+            selectedEnergy: selectedEnergy,
+            createdAt: goalStartDate
         )
         
         modelContext.insert(goal)
         
         do {
             try modelContext.save()
+            router.goToGoals()
             dismiss()
         } catch {
             print("Failed to save goal:", error.localizedDescription)
         }
     }
 }
+
+// MARK: - Growth Energy Info Sheet
 
 private struct GrowthEnergyInfoSheet: View {
     
@@ -277,9 +337,87 @@ private struct GrowthEnergyInfoSheet: View {
         .padding()
     }
 }
+
+// MARK: - Custom Duration Sheet
+
+private struct CustomDurationSheet: View {
+    
+    @Binding var startDate: Date
+    @Binding var endDate: Date
+    
+    let onDone: () -> Void
+    
+    private var durationDays: Int {
+        let start = Calendar.current.startOfDay(for: startDate)
+        let end = Calendar.current.startOfDay(for: endDate)
+        
+        let days = Calendar.current.dateComponents(
+            [.day],
+            from: start,
+            to: end
+        ).day ?? 0
+        
+        return max(days + 1, 1)
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            
+            Text("Custom duration")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundStyle(.black)
+            
+            VStack(alignment: .leading, spacing: 14) {
+                DatePicker(
+                    "Start date",
+                    selection: $startDate,
+                    displayedComponents: .date
+                )
+                
+                DatePicker(
+                    "End date",
+                    selection: $endDate,
+                    in: startDate...,
+                    displayedComponents: .date
+                )
+            }
+            .font(.headline)
+            
+            Text("Your goal will last \(durationDays) days.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            
+            Spacer()
+            
+            Button {
+                onDone()
+            } label: {
+                Text("Done")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(
+                        Capsule()
+                            .fill(Color.green)
+                    )
+            }
+        }
+        .padding(24)
+        .onChange(of: startDate) { _, newValue in
+            if endDate < newValue {
+                endDate = newValue
+            }
+        }
+    }
+}
+
 // MARK: - Preview
 
 #Preview {
     AddGoalView()
+        .environment(AppRouter())
         .modelContainer(for: Goal.self, inMemory: true)
 }
