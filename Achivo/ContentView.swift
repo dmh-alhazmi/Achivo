@@ -7,25 +7,42 @@
 
 import SwiftUI
 import SwiftData
-import SwiftUI
 
 struct ContentView: View {
     
     @Environment(AppRouter.self) private var router
     
+    @AppStorage("hasSeenPersonalityOnboarding")
+    private var hasSeenPersonalityOnboarding: Bool = false
+    
+    @State private var showAddGoalView: Bool = false
+    
     var body: some View {
         @Bindable var router = router
         
-        ZStack {
-            selectedPage
-            
-            VStack {
-                Spacer()
-                
-                AppBottomNavBar(selectedTab: $router.selectedTab)
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 10)
+        Group {
+            if hasSeenPersonalityOnboarding {
+                ZStack {
+                    selectedPage
+                    
+                    VStack {
+                        Spacer()
+                        
+                        AppBottomNavBar(selectedTab: $router.selectedTab)
+                            .padding(.horizontal, 18)
+                            .padding(.bottom, 10)
+                    }
+                }
+            } else {
+                PersonalityOnboardingView {
+                    hasSeenPersonalityOnboarding = true
+                    router.goToGoals()
+                    showAddGoalView = true
+                }
             }
+        }
+        .fullScreenCover(isPresented: $showAddGoalView) {
+            AddGoalView()
         }
     }
     
@@ -33,13 +50,13 @@ struct ContentView: View {
     private var selectedPage: some View {
         switch router.selectedTab {
         case .streak:
-            Text("Streak Page")
+            StreakScreen()
             
         case .goal:
             MyGoalsView()
             
         case .badge:
-            Text("Badge Page")
+            BadgesView()
         }
     }
 }

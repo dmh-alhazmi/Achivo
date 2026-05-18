@@ -2,6 +2,14 @@
 //  StreakScreen.swift
 //  Achivo
 //
+//  Created by Deemah Alhazmi on 18/05/2026.
+//
+
+
+//
+//  StreakScreen.swift
+//  Achivo
+//
 //  Created by Asma Khan on 30/11/1447 AH.
 //
 import SwiftUI
@@ -159,7 +167,7 @@ struct MonthCalendarView: View {
     let onDayTap: (Int) -> Void
     
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
-    private let weekdays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+    private let weekdays = ["SAT" , "SUN", "MON", "TUE", "WED", "THU", "FRI"]
     private let days = Array(1...30)
     
     var body: some View {

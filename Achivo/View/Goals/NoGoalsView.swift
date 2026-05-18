@@ -9,15 +9,11 @@ import SwiftUI
 
 struct NoGoalsView: View {
     
-    @Environment(AppRouter.self) private var router
-    
     let onBack: () -> Void
     
     @State private var showAddGoalView: Bool = false
     
     var body: some View {
-        @Bindable var router = router
-        
         GeometryReader { geo in
             let width = geo.size.width
             let height = geo.size.height
@@ -32,9 +28,6 @@ struct NoGoalsView: View {
                 plantImage(width: width, height: height)
                 
                 startGoalButton(width: width, height: height)
-                
-                AppBottomNavBar(selectedTab: $router.selectedTab)
-                    .position(x: width * 0.50, y: height * 0.94)
             }
         }
         .fullScreenCover(isPresented: $showAddGoalView) {
@@ -132,5 +125,4 @@ private extension NoGoalsView {
 
 #Preview {
     NoGoalsView(onBack: {})
-        .environment(AppRouter())
 }

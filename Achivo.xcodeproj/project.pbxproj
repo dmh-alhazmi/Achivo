@@ -61,6 +61,7 @@
 		26E543612FB1CA2A007C1F63 /* Exceptions for "Achivo" folder in "AchivoWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				App/WidgetProgressSync.swift,
 				Model/EnergyNotificationProfile.swift,
 				Model/GrowthEnergy.swift,
 				ViewModel/EnergyNotificationContent.swift,

@@ -25,6 +25,7 @@ struct MyGoalsView: View {
     private var goals: [Goal]
     
     @State private var showAddGoalView: Bool = false
+    @State private var showGrowthEnergiesInfoView: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -55,6 +56,11 @@ struct MyGoalsView: View {
             .fullScreenCover(isPresented: $showAddGoalView) {
                 AddGoalView()
             }
+            .fullScreenCover(isPresented: $showGrowthEnergiesInfoView) {
+                GrowthEnergiesInfoView {
+                    showGrowthEnergiesInfoView = false
+                }
+            }
         }
     }
 }
@@ -74,10 +80,10 @@ private extension MyGoalsView {
                 Spacer()
                 
                 Button {
-                    // Later: explain page idea
+                    showGrowthEnergiesInfoView = true
                 } label: {
                     Image(systemName: "exclamationmark.circle")
-                        .font(.headline)
+                        .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(.black)
                 }
             }

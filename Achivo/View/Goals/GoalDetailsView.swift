@@ -26,9 +26,10 @@ struct GoalDetailsView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     characterHeader
-                    goalInfoCard
                     progressCard
                     boostButton
+                    goalInfoCard
+                    
                 }
                 .padding(.horizontal, 22)
                 .padding(.top, 24)
