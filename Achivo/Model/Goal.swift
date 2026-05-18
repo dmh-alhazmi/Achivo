@@ -11,7 +11,7 @@ import SwiftData
 
 @Model
 final class Goal {
-    
+    var completedDates: [Date] = []
     var title: String
     var subGoal: String
     var durationDays: Int

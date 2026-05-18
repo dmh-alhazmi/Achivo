@@ -273,23 +273,52 @@ private struct GoalCardView: View {
             .font(.caption2)
             .foregroundStyle(energy.color)
     }
-    
     private func toggleToday() {
-        if goal.isCompletedToday {
-            goal.isCompletedToday = false
-            goal.completedDays = max(goal.completedDays - 1, 0)
-        } else {
-            goal.isCompletedToday = true
-            goal.completedDays = min(goal.completedDays + 1, goal.durationDays)
+            let today = Calendar.current.startOfDay(for: Date())
+            
+            if goal.isCompletedToday {
+                goal.isCompletedToday = false
+                goal.completedDays = max(goal.completedDays - 1, 0)
+                
+                goal.completedDates.removeAll { date in
+                    Calendar.current.isDate(date, inSameDayAs: today)
+                }
+            } else {
+                goal.isCompletedToday = true
+                goal.completedDays = min(goal.completedDays + 1, goal.durationDays)
+                
+                let alreadyAdded = goal.completedDates.contains { date in
+                    Calendar.current.isDate(date, inSameDayAs: today)
+                }
+                
+                if !alreadyAdded {
+                    goal.completedDates.append(today)
+                }
+            }
+            
+            do {
+                try modelContext.save()
+                WidgetCenter.shared.reloadAllTimelines()
+            } catch {
+                print("Failed to update goal:", error.localizedDescription)
+            }
         }
-        
-        do {
-            try modelContext.save()
-            WidgetCenter.shared.reloadAllTimelines()
-        } catch {
-            print("Failed to update goal:", error.localizedDescription)
-        }
-    }
+//    private func toggleToday() {
+//        if goal.isCompletedToday {
+//            goal.isCompletedToday = false
+//            goal.completedDays = max(goal.completedDays - 1, 0)
+//        } else {
+//            goal.isCompletedToday = true
+//            goal.completedDays = min(goal.completedDays + 1, goal.durationDays)
+//        }
+//        
+//        do {
+//            try modelContext.save()
+//            WidgetCenter.shared.reloadAllTimelines()
+//        } catch {
+//            print("Failed to update goal:", error.localizedDescription)
+//        }
+//    }
 }
 
 #Preview {

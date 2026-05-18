@@ -13,22 +13,39 @@
 //  Created by Asma Khan on 30/11/1447 AH.
 //
 import SwiftUI
+import SwiftData
 
 struct StreakScreen: View {
     @Environment(\.dismiss) private var dismiss
     
-    @State private var streakCount: Int = 1
-    @State private var selectedMonth: String = "January 2025"
-    @State private var selectedDay: Int = 26
-    @State private var showInfo: Bool = false
+    @Query(sort: \Goal.createdAt, order: .reverse)
+    private var goals: [Goal]
     
-    private let months: [JourneyMonth] = [
-        JourneyMonth(title: "January 2025", activeDays: Array(1...26), selectedDay: 26),
-        JourneyMonth(title: "September 2025", activeDays: Array(1...26), selectedDay: nil),
-        JourneyMonth(title: "October 2025", activeDays: Array(1...26), selectedDay: 26),
-        JourneyMonth(title: "November 2025", activeDays: [6, 7, 12, 13], selectedDay: nil),
-        JourneyMonth(title: "December 2025", activeDays: [1, 2, 3, 4, 5, 8, 9], selectedDay: nil)
-    ]
+    @State private var showInfo = false
+    @State private var months: [Date] = []
+    
+    private let calendar = Calendar.current
+    
+    private var completedDates: Set<Date> {
+        Set(
+            goals
+                .flatMap { $0.completedDates }
+                .map { calendar.startOfDay(for: $0) }
+        )
+    }
+    
+    private var streakCount: Int {
+        var count = 0
+        var date = calendar.startOfDay(for: Date())
+        
+        while completedDates.contains(date) {
+            count += 1
+            guard let previousDay = calendar.date(byAdding: .day, value: -1, to: date) else { break }
+            date = previousDay
+        }
+        
+        return count
+    }
     
     var body: some View {
         ZStack {
@@ -51,11 +68,14 @@ struct StreakScreen: View {
                         .foregroundColor(.black)
                     
                     ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 22) {
-                            ForEach(months) { month in
-                                MonthCalendarView(month: month) { day in
-                                    selectedMonth = month.title
-                                    selectedDay = day
+                        LazyVStack(spacing: 22) {
+                            ForEach(months, id: \.self) { month in
+                                MonthCalendarView(
+                                    monthDate: month,
+                                    completedDates: completedDates
+                                )
+                                .onAppear {
+                                    loadMoreIfNeeded(month)
                                 }
                             }
                         }
@@ -79,23 +99,18 @@ struct StreakScreen: View {
             .padding(.top, 18)
         }
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            setupMonths()
+        }
         .alert("Streak Info", isPresented: $showInfo) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Your current streak is Day \(streakCount). Selected date is \(selectedDay) \(selectedMonth).")
+            Text("Current streak is Day \(streakCount). Completed dates are based on checked goals.")
         }
     }
     
     private var header: some View {
         HStack {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.black)
-                    .frame(width: 36, height: 36)
-            }
             
             Spacer()
             
@@ -153,26 +168,75 @@ struct StreakScreen: View {
             DecorativeBackground()
         }
     }
-}
-
-struct JourneyMonth: Identifiable {
-    let id = UUID()
-    let title: String
-    let activeDays: [Int]
-    let selectedDay: Int?
+    
+    private func setupMonths() {
+        guard months.isEmpty else { return }
+        
+        let currentMonth = calendar.date(
+            from: calendar.dateComponents([.year, .month], from: Date())
+        ) ?? Date()
+        
+        months = (0...12).compactMap {
+            calendar.date(byAdding: .month, value: $0, to: currentMonth)
+        }
+    }
+//    private func setupMonths() {
+//        guard months.isEmpty else { return }
+//
+//        let currentMonth = calendar.date(
+//            from: calendar.dateComponents([.year, .month], from: Date())
+//        ) ?? Date()
+//
+//        months = (-12...24).compactMap {
+//            calendar.date(byAdding: .month, value: $0, to: currentMonth)
+//        }
+//    }
+    
+    private func loadMoreIfNeeded(_ month: Date) {
+        guard month == months.last else { return }
+        guard let last = months.last else { return }
+        
+        let moreMonths = (1...12).compactMap {
+            calendar.date(byAdding: .month, value: $0, to: last)
+        }
+        
+        months.append(contentsOf: moreMonths)
+    }
 }
 
 struct MonthCalendarView: View {
-    let month: JourneyMonth
-    let onDayTap: (Int) -> Void
+    let monthDate: Date
+    let completedDates: Set<Date>
     
+    private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
-    private let weekdays = ["SAT" , "SUN", "MON", "TUE", "WED", "THU", "FRI"]
-    private let days = Array(1...30)
+    private let weekdays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+    
+    private var monthTitle: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: monthDate)
+    }
+    
+    private var days: [Date] {
+        guard let range = calendar.range(of: .day, in: .month, for: monthDate),
+              let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)) else {
+            return []
+        }
+        
+        return range.compactMap {
+            calendar.date(byAdding: .day, value: $0 - 1, to: startOfMonth)
+        }
+    }
+    
+    private var leadingSpaces: Int {
+        guard let firstDay = days.first else { return 0 }
+        return calendar.component(.weekday, from: firstDay) - 1
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(month.title)
+            Text(monthTitle)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.black)
                 .padding(.leading, 5)
@@ -184,17 +248,13 @@ struct MonthCalendarView: View {
                         .foregroundColor(.white)
                 }
                 
-                ForEach(days, id: \.self) { day in
-                    Button {
-                        onDayTap(day)
-                    } label: {
-                        Text("\(day)")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(textColor(for: day))
-                            .frame(width: 28, height: 28)
-                            .background(background(for: day))
-                    }
-                    .buttonStyle(.plain)
+                ForEach(0..<leadingSpaces, id: \.self) { _ in
+                    Color.clear
+                        .frame(width: 28, height: 28)
+                }
+                
+                ForEach(days, id: \.self) { date in
+                    dayView(date)
                 }
             }
             
@@ -206,31 +266,25 @@ struct MonthCalendarView: View {
         }
     }
     
-    private func background(for day: Int) -> some View {
-        Group {
-            if month.selectedDay == day {
-                Circle()
-                    .fill(Color(red: 0.42, green: 0.62, blue: 0.13))
-            } else if month.activeDays.contains(day) {
-                Circle()
-                    .fill(Color(red: 0.78, green: 0.84, blue: 0.45))
-            } else {
-                Circle()
-                    .fill(Color.clear)
-            }
-        }
-    }
-    
-    private func textColor(for day: Int) -> Color {
-        if month.selectedDay == day {
-            return .white
-        }
+    private func dayView(_ date: Date) -> some View {
+        let day = calendar.component(.day, from: date)
+        let isCompleted = completedDates.contains(calendar.startOfDay(for: date))
+        let isToday = calendar.isDateInToday(date)
         
-        if month.activeDays.contains(day) {
-            return Color(red: 0.42, green: 0.62, blue: 0.13)
-        }
-        
-        return .white.opacity(0.95)
+        return Text("\(day)")
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundColor(isCompleted ? .white : .white.opacity(0.95))
+            .frame(width: 28, height: 28)
+            .background(
+                Circle()
+                    .fill(
+                        isCompleted
+                        ? Color(red: 0.42, green: 0.62, blue: 0.13)
+                        : isToday
+                        ? Color(red: 0.78, green: 0.84, blue: 0.45)
+                        : Color.clear
+                    )
+            )
     }
 }
 
@@ -265,4 +319,5 @@ struct DecorativeBackground: View {
     NavigationStack {
         StreakScreen()
     }
+    .modelContainer(for: Goal.self, inMemory: true)
 }
