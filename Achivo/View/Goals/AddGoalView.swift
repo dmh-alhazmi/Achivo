@@ -128,13 +128,13 @@ private extension AddGoalView {
         VStack(spacing: 24) {
             textInput(
                 title: "What's your goal?",
-                placeholder: "e.g. Learn Swift, Read 10 pages...",
+                placeholder: "e.g. Learn Swift, Read a Book...",
                 text: $goalTitle
             )
             
             textInput(
                 title: "What should we remind you to do?",
-                placeholder: "e.g. Watch one lesson, Walk 20 min...",
+                placeholder: "e.g. Watch one lesson, Read 10 Pages...",
                 text: $reminderAction
             )
         }

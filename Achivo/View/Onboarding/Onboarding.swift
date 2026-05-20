@@ -14,8 +14,18 @@ struct PersonalityOnboardingView: View {
     
     private let energies = GrowthEnergy.allCases
     
-    private var isLastCharacter: Bool {
-        currentIndex == energies.count - 1
+    // Page 0 = Welcome page
+    // Page 1... = Characters
+    private var totalPages: Int {
+        energies.count + 1
+    }
+    
+    private var isWelcomePage: Bool {
+        currentIndex == 0
+    }
+    
+    private var isLastPage: Bool {
+        currentIndex == totalPages - 1
     }
     
     var body: some View {
@@ -37,51 +47,186 @@ struct PersonalityOnboardingView: View {
                 .ignoresSafeArea()
             
             TabView(selection: $currentIndex) {
+                
+                WelcomeOnboardingPage(
+                    geo: geo,
+                    energies: energies
+                )
+                .tag(0)
+                
                 ForEach(Array(energies.enumerated()), id: \.element.id) { index, energy in
                     PersonalityCharacterPage(
                         geo: geo,
                         energy: energy
                     )
-                    .tag(index)
+                    .tag(index + 1)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
             
-            VStack(spacing: height * 0.025) {
-                pageDots
+            skipButton(width: width, height: height)
+            
+            if isWelcomePage {
+                meetBuddiesText(width: width, height: height)
+            } else {
+                VStack(spacing: height * 0.025) {
+                    pageDots
+                    
+                    PrimaryButton(
+                        title: "Create Goal",
+                        width: width,
+                        height: height,
+                        isEnabled: isLastPage
+                    ) {
+                        onCreateGoal()
+                    }
+                }
+                .position(
+                    x: width * 0.52,
+                    y: height * 0.84
+                )
+            }
+        }
+    }
+    
+    private func meetBuddiesText(width: CGFloat, height: CGFloat) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                currentIndex = 1
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text("Meet Your Buddies")
+                    .font(.system(size: width * 0.043, weight: .bold, design: .rounded))
                 
-                PrimaryButton(
-                    title: "Create Goal",
-                    width: width,
-                    height: height,
-                    isEnabled: isLastCharacter
-                ) {
-                    onCreateGoal()
+                Image(systemName: "arrow.right")
+                    .font(.system(size: width * 0.034, weight: .bold))
+            }
+            .foregroundColor(Color(red: 0.42, green: 0.60, blue: 0.10))
+        }
+        .buttonStyle(.plain)
+        .position(
+            x: width * 0.50,
+            y: height * 0.82
+        )
+    }
+    
+    private func skipButton(width: CGFloat, height: CGFloat) -> some View {
+        Button {
+            onCreateGoal()
+        } label: {
+            Text("Skip")
+                .font(.system(size: width * 0.038, weight: .semibold, design: .rounded))
+                .foregroundColor(Color.gray.opacity(0.85))
+        }
+        .buttonStyle(.plain)
+        .position(
+            x: width * 0.83,
+            y: height * 0.075
+        )
+    }
+    
+    private var pageDots: some View {
+        HStack(spacing: 8) {
+            ForEach(1..<totalPages, id: \.self) { index in
+                Circle()
+                    .fill(dotColor(for: index))
+                    .frame(
+                        width: index == currentIndex ? 10 : 7,
+                        height: index == currentIndex ? 10 : 7
+                    )
+                    .animation(.spring(response: 0.3, dampingFraction: 0.75), value: currentIndex)
+            }
+        }
+    }
+    
+    private func dotColor(for index: Int) -> Color {
+        if index != currentIndex {
+            return Color.gray.opacity(0.25)
+        }
+        
+        return energies[index - 1].color
+    }
+}
+
+// MARK: - Welcome Page
+
+struct WelcomeOnboardingPage: View {
+    let geo: GeometryProxy
+    let energies: [GrowthEnergy]
+    
+    var body: some View {
+        let width = geo.size.width
+        let height = geo.size.height
+        
+        ZStack {
+            HStack(spacing: width * 0.015) {
+                ForEach(Array(energies.enumerated()), id: \.element.id) { index, energy in
+                    Image(energy.assetName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: characterWidth(width: width, index: index))
+                        .offset(y: characterOffset(height: height, index: index))
                 }
             }
+            .frame(width: width * 0.88)
             .position(
-                x: width * 0.52,
-                y: height * 0.84
+                x: width * 0.50,
+                y: height * 0.35
+            )
+            
+            VStack(spacing: height * 0.018) {
+                VStack(spacing: height * 0.002) {
+                    Text("Let’s grow")
+                        .font(.system(size: width * 0.068, weight: .bold, design: .rounded))
+                        .foregroundColor(Color(red: 0.50, green: 0.65, blue: 0.32))
+                    
+                    Text("together")
+                        .font(.system(size: width * 0.068, weight: .bold, design: .rounded))
+                        .foregroundColor(Color(red: 0.10, green: 0.13, blue: 0.18))
+                }
+                
+                Text("Small steps today,\nbig change tomorrow")
+                    .font(.system(size: width * 0.044, weight: .bold, design: .rounded))
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+                    .padding(.top, height * 0.015)
+            }
+            .position(
+                x: width * 0.50,
+                y: height * 0.57
             )
         }
     }
     
-    private var pageDots: some View {
-            HStack(spacing: 8) {
-                ForEach(energies.indices, id: \.self) { index in
-                    Circle()
-                        .fill(index == currentIndex ? GrowthEnergy.allCases[currentIndex].color : Color.gray.opacity(0.25))
-                        .frame(
-                            width: index == currentIndex ? 10 : 7,
-                            height: index == currentIndex ? 10 : 7
-                        )
-                        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: currentIndex)
-                }
-            }
+    private func characterWidth(width: CGFloat, index: Int) -> CGFloat {
+        switch index {
+        case 0:
+            return width * 0.20
+        case 1:
+            return width * 0.24
+        case 2:
+            return width * 0.23
+        default:
+            return width * 0.21
         }
+    }
+    
+    private func characterOffset(height: CGFloat, index: Int) -> CGFloat {
+        switch index {
+        case 0:
+            return height * 0.030
+        case 1:
+            return -height * 0.020
+        case 2:
+            return height * 0.010
+        default:
+            return height * 0.020
+        }
+    }
 }
-
 // MARK: - Character Page
 
 struct PersonalityCharacterPage: View {
@@ -267,7 +412,7 @@ private extension GrowthEnergy {
         case .sunny:
             return 0.53
         case .fiery:
-            return 0.53
+            return 0.50
         }
     }
     

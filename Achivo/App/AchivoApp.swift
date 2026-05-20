@@ -18,6 +18,9 @@ struct AchivoApp: App {
             ContentView()
                 .environment(router)
         }
-        .modelContainer(for: Goal.self)
+        .modelContainer(for: [
+            Goal.self,
+            AchievementBadge.self
+        ])
     }
 }

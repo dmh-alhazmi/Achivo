@@ -6,16 +6,26 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct BadgesView: View {
     
+    @Environment(\.modelContext) private var modelContext
+    
+    @Query(sort: \AchievementBadge.name, order: .forward)
+    private var badges: [AchievementBadge]
+    
     @State private var selectedBadge: AchievementBadge?
     
-    private let badges = BadgeData.defaultBadges
+    private var orderedBadges: [AchievementBadge] {
+        badges.sorted { first, second in
+            badgeOrder(first) < badgeOrder(second)
+        }
+    }
     
     private var badgeRows: [[AchievementBadge]] {
-        stride(from: 0, to: badges.count, by: 2).map { index in
-            Array(badges[index..<min(index + 2, badges.count)])
+        stride(from: 0, to: orderedBadges.count, by: 2).map { index in
+            Array(orderedBadges[index..<min(index + 2, orderedBadges.count)])
         }
     }
     
@@ -26,32 +36,15 @@ struct BadgesView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 28) {
                     
-                    Text("The Badges")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(.black)
-                        .padding(.top, 70)
+                    header
                     
-                    VStack(spacing: 22) {
-                        ForEach(badgeRows.indices, id: \.self) { rowIndex in
-                            HStack(spacing: 28) {
-                                ForEach(badgeRows[rowIndex], id: \.id) { badge in
-                                    BadgeCardView(badge: badge)
-                                        .onTapGesture {
-                                            selectedBadge = badge
-                                        }
-                                }
-                                
-                                if badgeRows[rowIndex].count == 1 {
-                                    Spacer()
-                                        .frame(width: 128, height: 160)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
+                    if orderedBadges.isEmpty {
+                        emptyBadgesView
+                    } else {
+                        badgesGrid
                     }
-                    .padding(.horizontal, 28)
-                    .padding(.bottom, 110)
                 }
+                .padding(.bottom, 110)
             }
             
             if let selectedBadge {
@@ -63,16 +56,101 @@ struct BadgesView: View {
                 )
             }
         }
+        .onAppear {
+            BadgeAwardManager.prepareBadgesIfNeeded(
+                modelContext: modelContext
+            )
+        }
     }
+}
+
+// MARK: - UI
+
+private extension BadgesView {
     
-    private var background: some View {
+    var background: some View {
         Image("background")
             .resizable()
             .scaledToFill()
             .ignoresSafeArea()
     }
+    
+    var header: some View {
+        VStack(spacing: 8) {
+            Text("The Badges")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.black)
+                .padding(.top, 70)
+            
+            Text("\(unlockedCount) collected • \(lockedCount) locked")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.black.opacity(0.55))
+        }
+    }
+    
+    var badgesGrid: some View {
+        VStack(spacing: 22) {
+            ForEach(badgeRows.indices, id: \.self) { rowIndex in
+                HStack(spacing: 28) {
+                    ForEach(badgeRows[rowIndex], id: \.id) { badge in
+                        BadgeCardView(badge: badge)
+                            .onTapGesture {
+                                selectedBadge = badge
+                            }
+                    }
+                    
+                    if badgeRows[rowIndex].count == 1 {
+                        Spacer()
+                            .frame(width: 128, height: 160)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.horizontal, 28)
+    }
+    
+    var emptyBadgesView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "seal")
+                .font(.system(size: 42, weight: .semibold))
+                .foregroundStyle(Color.green)
+            
+            Text("No badges yet")
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundStyle(.black)
+            
+            Text("Complete goals and build streaks to collect badges.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 36)
+        }
+        .padding(.top, 120)
+    }
+    
+    var unlockedCount: Int {
+        badges.filter { $0.isUnlocked }.count
+    }
+    
+    var lockedCount: Int {
+        badges.filter { !$0.isUnlocked }.count
+    }
+    
+    func badgeOrder(_ badge: AchievementBadge) -> Int {
+        if badge.isUnlocked {
+            return 0
+        }
+        
+        switch badge.kind {
+        case .character:
+            return 1
+        case .streak:
+            return 2
+        }
+    }
 }
-
 
 // MARK: - Badge Card
 
@@ -105,7 +183,7 @@ private struct BadgeCardView: View {
                     .minimumScaleFactor(0.7)
                     .padding(.horizontal, 10)
                 
-                Text(badge.isUnlocked ? badge.badgeDescription : "Keep going to collect it.")
+                Text(badge.isUnlocked ? badge.badgeDescription : lockedMessage)
                     .font(.system(size: 7, weight: .regular))
                     .foregroundStyle(.black.opacity(0.55))
                     .multilineTextAlignment(.center)
@@ -124,8 +202,20 @@ private struct BadgeCardView: View {
         }
         .frame(width: 128, height: 160)
     }
+    
+    private var lockedMessage: String {
+        switch badge.kind {
+        case .character:
+            return "Complete a goal with this character."
+        case .streak:
+            if let days = badge.requiredStreakDays {
+                return "Build a \(days)-day streak."
+            } else {
+                return "Keep going to collect it."
+            }
+        }
+    }
 }
-
 
 // MARK: - Badge Popup
 
@@ -181,7 +271,7 @@ private struct BadgePopupView: View {
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 18)
                             
-                            Text(badge.isUnlocked ? badge.badgeDescription : "Keep completing goals and building your streak to collect this badge.")
+                            Text(badge.isUnlocked ? badge.badgeDescription : lockedPopupMessage)
                                 .font(.system(size: 9))
                                 .foregroundStyle(.black.opacity(0.65))
                                 .multilineTextAlignment(.center)
@@ -216,8 +306,20 @@ private struct BadgePopupView: View {
             .frame(width: 330, height: 420)
         }
     }
+    
+    private var lockedPopupMessage: String {
+        switch badge.kind {
+        case .character:
+            return "Complete a full goal with this character to collect this badge."
+        case .streak:
+            if let days = badge.requiredStreakDays {
+                return "Complete goals for \(days) days in a row to collect this badge."
+            } else {
+                return "Keep completing goals and building your streak to collect this badge."
+            }
+        }
+    }
 }
-
 
 // MARK: - Date Format
 
@@ -230,9 +332,15 @@ private extension Date {
     }
 }
 
-
 // MARK: - Preview
 
 #Preview {
     BadgesView()
+        .modelContainer(
+            for: [
+                Goal.self,
+                AchievementBadge.self
+            ],
+            inMemory: true
+        )
 }

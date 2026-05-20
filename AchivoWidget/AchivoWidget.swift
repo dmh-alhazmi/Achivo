@@ -8,14 +8,27 @@
 import WidgetKit
 import SwiftUI
 
+// MARK: - Widget Models
+
+struct WidgetTaskProgress: Codable, Identifiable {
+    let id: String
+    let title: String
+    let isCompleted: Bool
+}
+
 struct WidgetGoalProgress: Codable, Identifiable {
     let id: String
     let title: String
     let completedDays: Int
     let durationDays: Int
     let energyRawValue: String
+    let tasks: [WidgetTaskProgress]
     
     var progress: Double {
+        if !tasks.isEmpty {
+            return Double(completedTaskCount) / Double(tasks.count)
+        }
+        
         guard durationDays > 0 else { return 0 }
         return Double(completedDays) / Double(durationDays)
     }
@@ -24,10 +37,16 @@ struct WidgetGoalProgress: Codable, Identifiable {
         Int(progress * 100)
     }
     
+    var completedTaskCount: Int {
+        tasks.filter { $0.isCompleted }.count
+    }
+    
     var energy: GrowthEnergy {
         GrowthEnergy(rawValue: energyRawValue) ?? .sunny
     }
 }
+
+// MARK: - Provider
 
 struct AchivoWidgetProvider: AppIntentTimelineProvider {
     
@@ -36,7 +55,7 @@ struct AchivoWidgetProvider: AppIntentTimelineProvider {
             date: Date(),
             configuration: ConfigurationAppIntent(),
             energy: .sunny,
-            message: .init(
+            message: EnergyNotificationContent(
                 title: "Let’s do one tiny step!",
                 body: "Starting is already progress."
             ),
@@ -46,7 +65,12 @@ struct AchivoWidgetProvider: AppIntentTimelineProvider {
                     title: "Read a book",
                     completedDays: 3,
                     durationDays: 10,
-                    energyRawValue: GrowthEnergy.sunny.rawValue
+                    energyRawValue: GrowthEnergy.sunny.rawValue,
+                    tasks: [
+                        WidgetTaskProgress(id: UUID().uuidString, title: "Read 5 pages", isCompleted: true),
+                        WidgetTaskProgress(id: UUID().uuidString, title: "Highlight ideas", isCompleted: false),
+                        WidgetTaskProgress(id: UUID().uuidString, title: "Write summary", isCompleted: false)
+                    ]
                 )
             ]
         )
@@ -68,7 +92,7 @@ struct AchivoWidgetProvider: AppIntentTimelineProvider {
         
         let nextUpdate = Calendar.current.date(
             byAdding: .hour,
-            value: 3,
+            value: 1,
             to: Date()
         ) ?? Date()
         
@@ -118,6 +142,8 @@ struct AchivoWidgetProvider: AppIntentTimelineProvider {
     }
 }
 
+// MARK: - Entry
+
 struct AchivoWidgetEntry: TimelineEntry {
     let date: Date
     let configuration: ConfigurationAppIntent
@@ -125,6 +151,8 @@ struct AchivoWidgetEntry: TimelineEntry {
     let message: EnergyNotificationContent
     let goals: [WidgetGoalProgress]
 }
+
+// MARK: - Widget View
 
 struct AchivoWidgetEntryView: View {
     let entry: AchivoWidgetEntry
@@ -144,37 +172,49 @@ struct AchivoWidgetEntryView: View {
     private func singleGoalView(_ goal: WidgetGoalProgress) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             
-            HStack {
-                Image(goal.energy.assetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 52, height: 52)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(goal.title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    
+                    Text("\(goal.completedTaskCount) of \(goal.tasks.count) tasks")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
                 
                 Spacer()
                 
+                Image(goal.energy.assetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 42, height: 42)
+            }
+            
+            HStack(spacing: 8) {
+                progressBar(
+                    progress: goal.progress,
+                    color: goal.energy.color
+                )
+                
                 Text("\(goal.progressPercent)%")
-                    .font(.caption)
+                    .font(.caption2)
                     .fontWeight(.bold)
                     .foregroundStyle(goal.energy.color)
             }
             
-            Text(goal.title)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(goal.tasks.prefix(3)) { task in
+                    taskRow(task)
+                }
+            }
             
-            progressBar(
-                progress: goal.progress,
-                color: goal.energy.color
-            )
-            
-            Text("\(goal.completedDays) / \(goal.durationDays) days")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
             
             Text(entry.message.title)
-                .font(.caption)
+                .font(.caption2)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -190,16 +230,22 @@ struct AchivoWidgetEntryView: View {
     private var multipleGoalsView: some View {
         VStack(alignment: .leading, spacing: 8) {
             
-            Text("Your Goals")
-                .font(.headline)
-                .fontWeight(.bold)
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Your Goals")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                    
+                    Text("Progress & tasks")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+            }
             
-            Text("Keep growing step by step")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            
-            VStack(spacing: 8) {
-                ForEach(entry.goals.prefix(4)) { goal in
+            VStack(spacing: 7) {
+                ForEach(entry.goals.prefix(3)) { goal in
                     goalProgressRow(goal)
                 }
             }
@@ -227,7 +273,7 @@ struct AchivoWidgetEntryView: View {
                 
                 Spacer()
                 
-                Text("\(goal.progressPercent)%")
+                Text("\(goal.completedTaskCount)/\(goal.tasks.count)")
                     .font(.caption2)
                     .fontWeight(.bold)
                     .foregroundStyle(goal.energy.color)
@@ -237,6 +283,21 @@ struct AchivoWidgetEntryView: View {
                 progress: goal.progress,
                 color: goal.energy.color
             )
+        }
+    }
+    
+    // MARK: - Task Row
+    
+    private func taskRow(_ task: WidgetTaskProgress) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                .font(.caption2)
+                .foregroundStyle(task.isCompleted ? .green : .secondary)
+            
+            Text(task.title)
+                .font(.caption2)
+                .foregroundStyle(task.isCompleted ? .secondary : .primary)
+                .lineLimit(1)
         }
     }
     
@@ -280,6 +341,8 @@ struct AchivoWidgetEntryView: View {
     }
 }
 
+// MARK: - Widget
+
 struct AchivoWidget: Widget {
     let kind: String = "AchivoWidget"
     
@@ -292,13 +355,15 @@ struct AchivoWidget: Widget {
             AchivoWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Goal Progress")
-        .description("See your goal progress with your growth energy.")
+        .description("See your goal progress and tasks.")
         .supportedFamilies([
             .systemSmall,
             .systemMedium
         ])
     }
 }
+
+// MARK: - Preview
 
 #Preview(as: .systemSmall) {
     AchivoWidget()
@@ -317,7 +382,12 @@ struct AchivoWidget: Widget {
                 title: "Read a book",
                 completedDays: 3,
                 durationDays: 10,
-                energyRawValue: GrowthEnergy.sunny.rawValue
+                energyRawValue: GrowthEnergy.sunny.rawValue,
+                tasks: [
+                    WidgetTaskProgress(id: UUID().uuidString, title: "Read 5 pages", isCompleted: true),
+                    WidgetTaskProgress(id: UUID().uuidString, title: "Write notes", isCompleted: false),
+                    WidgetTaskProgress(id: UUID().uuidString, title: "Finish chapter", isCompleted: false)
+                ]
             )
         ]
     )

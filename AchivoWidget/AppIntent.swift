@@ -14,7 +14,7 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
         "Choose which growth character appears in your widget."
     }
     
-    @Parameter(title: "Growth Energy", default: "sunny")
+    @Parameter(title: "Growth Energy", default: "fiery")
     var growthEnergy: String
 }
 

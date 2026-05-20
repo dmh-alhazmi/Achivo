@@ -21,7 +21,7 @@ struct NoGoalsView: View {
             ZStack {
                 background(width: width, height: height)
                 
-                backButton(width: width, height: height)
+                //backButton(width: width, height: height)
                 
                 titleSection(width: width, height: height)
                 
@@ -49,16 +49,16 @@ private extension NoGoalsView {
             .ignoresSafeArea()
     }
     
-    func backButton(width: CGFloat, height: CGFloat) -> some View {
-        Button {
-            onBack()
-        } label: {
-            Image(systemName: "chevron.left")
-                .font(.system(size: width * 0.052, weight: .medium))
-                .foregroundColor(.black)
-        }
-        .position(x: width * 0.13, y: height * 0.085)
-    }
+//    func backButton(width: CGFloat, height: CGFloat) -> some View {
+//        Button {
+//            onBack()
+//        } label: {
+//            Image(systemName: "chevron.left")
+//                .font(.system(size: width * 0.052, weight: .medium))
+//                .foregroundColor(.black)
+//        }
+//        .position(x: width * 0.13, y: height * 0.085)
+//    }
     
     func titleSection(width: CGFloat, height: CGFloat) -> some View {
         VStack(spacing: height * 0.016) {

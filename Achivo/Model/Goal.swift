@@ -5,7 +5,6 @@
 //  Created by Deemah Alhazmi on 03/05/2026.
 //
 
-
 import Foundation
 import SwiftData
 
@@ -19,6 +18,7 @@ final class Goal {
     var createdAt: Date
     var completedDays: Int
     var isCompletedToday: Bool
+    var isActive: Bool
     
     init(
         title: String,
@@ -27,7 +27,8 @@ final class Goal {
         selectedEnergy: GrowthEnergy,
         createdAt: Date = Date(),
         completedDays: Int = 0,
-        isCompletedToday: Bool = false
+        isCompletedToday: Bool = false,
+        isActive: Bool = true
     ) {
         self.title = title
         self.subGoal = subGoal
@@ -36,6 +37,7 @@ final class Goal {
         self.createdAt = createdAt
         self.completedDays = completedDays
         self.isCompletedToday = isCompletedToday
+        self.isActive = isActive
     }
     
     var selectedEnergy: GrowthEnergy {
@@ -54,4 +56,78 @@ final class Goal {
     var isFinished: Bool {
         completedDays >= durationDays
     }
+    
+    var endDate: Date {
+        Calendar.current.date(
+            byAdding: .day,
+            value: durationDays,
+            to: createdAt
+        ) ?? createdAt
+    }
+    
+    var isExpired: Bool {
+        Date() > endDate && !isFinished
+    }
+    
+    var isDoneToday: Bool {
+        let today = Calendar.current.startOfDay(for: Date())
+        
+        return completedDates.contains { date in
+            Calendar.current.isDate(date, inSameDayAs: today)
+        }
+    }
+    
+    var goalStatus: GoalStatus {
+        if isFinished {
+            return .finished
+        } else if !isActive || isExpired {
+            return .inactive
+        } else {
+            return .active
+        }
+    }
+    
+    func checkToday() {
+        let today = Calendar.current.startOfDay(for: Date())
+        
+        guard isActive else { return }
+        guard !isFinished else { return }
+        guard !isDoneToday else { return }
+        
+        completedDates.append(today)
+        completedDays = min(completedDays + 1, durationDays)
+        isCompletedToday = true
+    }
+    
+    func uncheckToday() {
+        let today = Calendar.current.startOfDay(for: Date())
+        
+        completedDates.removeAll { date in
+            Calendar.current.isDate(date, inSameDayAs: today)
+        }
+        
+        completedDays = max(completedDays - 1, 0)
+        isCompletedToday = false
+    }
+    
+    func deactivateIfNeeded() {
+        if isExpired && !isFinished {
+            isActive = false
+            isCompletedToday = false
+        }
+    }
+    
+    func restartGoal() {
+        createdAt = Date()
+        completedDays = 0
+        completedDates = []
+        isCompletedToday = false
+        isActive = true
+    }
+}
+
+enum GoalStatus {
+    case active
+    case inactive
+    case finished
 }

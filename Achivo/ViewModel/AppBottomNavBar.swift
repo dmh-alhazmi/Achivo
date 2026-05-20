@@ -69,7 +69,7 @@ struct AppBottomNavBar: View {
                     LinearGradient(
                         colors: [
                             Color(red: 1.00, green: 0.97, blue: 0.91),
-                            Color(red: 0.96, green: 0.98, blue: 0.89)
+                           // Color(red: 0.96, green: 0.98, blue: 0.89)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing

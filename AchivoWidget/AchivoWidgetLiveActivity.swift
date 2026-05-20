@@ -9,72 +9,212 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
+// MARK: - Live Activity Attributes
+
 struct AchivoWidgetAttributes: ActivityAttributes {
+    
     public struct ContentState: Codable, Hashable {
-        // Dynamic stateful properties about your activity go here!
-        var emoji: String
+        var goalTitle: String
+        var progressPercent: Int
+        var completedTasks: Int
+        var totalTasks: Int
+        var energyRawValue: String
     }
 
-    // Fixed non-changing properties about your activity go here!
     var name: String
 }
 
-struct AchivoWidgetLiveActivity: Widget {
-    var body: some WidgetConfiguration {
-        ActivityConfiguration(for: AchivoWidgetAttributes.self) { context in
-            // Lock screen/banner UI goes here
-            VStack {
-                Text("Hello \(context.state.emoji)")
-            }
-            .activityBackgroundTint(Color.cyan)
-            .activitySystemActionForegroundColor(Color.black)
+// MARK: - Helpers
 
-        } dynamicIsland: { context in
-            DynamicIsland {
-                // Expanded UI goes here.  Compose the expanded UI through
-                // various regions, like leading/trailing/center/bottom
-                DynamicIslandExpandedRegion(.leading) {
-                    Text("Leading")
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    Text("Trailing")
-                }
-                DynamicIslandExpandedRegion(.bottom) {
-                    Text("Bottom \(context.state.emoji)")
-                    // more content
-                }
-            } compactLeading: {
-                Text("L")
-            } compactTrailing: {
-                Text("T \(context.state.emoji)")
-            } minimal: {
-                Text(context.state.emoji)
-            }
-            .widgetURL(URL(string: "http://www.apple.com"))
-            .keylineTint(Color.red)
-        }
+extension AchivoWidgetAttributes.ContentState {
+    
+    var energy: GrowthEnergy {
+        GrowthEnergy(rawValue: energyRawValue) ?? .sunny
+    }
+    
+    var safeProgress: Int {
+        min(max(progressPercent, 0), 100)
     }
 }
 
+// MARK: - Live Activity Widget
+
+struct AchivoWidgetLiveActivity: Widget {
+    
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: AchivoWidgetAttributes.self) { context in
+            
+            // MARK: Lock Screen / Banner UI
+            
+            HStack(spacing: 12) {
+                Image(context.state.energy.assetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 54, height: 54)
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(context.state.goalTitle)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .lineLimit(1)
+                    
+                    Text("\(context.state.completedTasks) of \(context.state.totalTasks) tasks completed")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    progressBar(
+                        progress: Double(context.state.safeProgress) / 100,
+                        color: context.state.energy.color
+                    )
+                }
+                
+                Spacer()
+                
+                Text("\(context.state.safeProgress)%")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundStyle(context.state.energy.color)
+            }
+            .padding()
+            .activityBackgroundTint(context.state.energy.color.opacity(0.15))
+            .activitySystemActionForegroundColor(context.state.energy.color)
+
+        } dynamicIsland: { context in
+            
+            DynamicIsland {
+                
+                // MARK: Expanded Dynamic Island
+                
+                DynamicIslandExpandedRegion(.leading) {
+                    Image(context.state.energy.assetName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 48, height: 48)
+                }
+                
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text("\(context.state.safeProgress)%")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(context.state.energy.color)
+                }
+                
+                DynamicIslandExpandedRegion(.center) {
+                    VStack(spacing: 3) {
+                        Text(context.state.goalTitle)
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .lineLimit(1)
+                        
+                        Text("\(context.state.completedTasks) / \(context.state.totalTasks) tasks")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                DynamicIslandExpandedRegion(.bottom) {
+                    progressBar(
+                        progress: Double(context.state.safeProgress) / 100,
+                        color: context.state.energy.color
+                    )
+                    .padding(.horizontal, 4)
+                }
+                
+            } compactLeading: {
+                
+                // MARK: Compact Left
+                
+                Image(context.state.energy.assetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
+                
+            } compactTrailing: {
+                
+                // MARK: Compact Right
+                
+                Text("\(context.state.safeProgress)%")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundStyle(context.state.energy.color)
+                
+            } minimal: {
+                
+                // MARK: Minimal
+                
+                ZStack {
+                    Circle()
+                        .stroke(context.state.energy.color.opacity(0.3), lineWidth: 2)
+                    
+                    Circle()
+                        .trim(from: 0, to: Double(context.state.safeProgress) / 100)
+                        .stroke(context.state.energy.color, lineWidth: 2)
+                        .rotationEffect(.degrees(-90))
+                    
+                    Image(context.state.energy.assetName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 16, height: 16)
+                }
+                .frame(width: 24, height: 24)
+            }
+            .keylineTint(context.state.energy.color)
+        }
+    }
+    
+    // MARK: - Progress Bar
+    
+    private func progressBar(progress: Double, color: Color) -> some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.gray.opacity(0.25))
+                
+                Capsule()
+                    .fill(color)
+                    .frame(
+                        width: geometry.size.width * min(max(progress, 0), 1)
+                    )
+            }
+        }
+        .frame(height: 7)
+    }
+}
+
+// MARK: - Preview
+
 extension AchivoWidgetAttributes {
     fileprivate static var preview: AchivoWidgetAttributes {
-        AchivoWidgetAttributes(name: "World")
+        AchivoWidgetAttributes(name: "Achivo Progress")
     }
 }
 
 extension AchivoWidgetAttributes.ContentState {
-    fileprivate static var smiley: AchivoWidgetAttributes.ContentState {
-        AchivoWidgetAttributes.ContentState(emoji: "😀")
-     }
-     
-     fileprivate static var starEyes: AchivoWidgetAttributes.ContentState {
-         AchivoWidgetAttributes.ContentState(emoji: "🤩")
-     }
+    
+    fileprivate static var sunnyProgress: AchivoWidgetAttributes.ContentState {
+        AchivoWidgetAttributes.ContentState(
+            goalTitle: "Read a book",
+            progressPercent: 65,
+            completedTasks: 2,
+            totalTasks: 3,
+            energyRawValue: GrowthEnergy.sunny.rawValue
+        )
+    }
+    
+    fileprivate static var fieryProgress: AchivoWidgetAttributes.ContentState {
+        AchivoWidgetAttributes.ContentState(
+            goalTitle: "Learn Swift",
+            progressPercent: 30,
+            completedTasks: 1,
+            totalTasks: 4,
+            energyRawValue: GrowthEnergy.fiery.rawValue
+        )
+    }
 }
 
 #Preview("Notification", as: .content, using: AchivoWidgetAttributes.preview) {
-   AchivoWidgetLiveActivity()
+    AchivoWidgetLiveActivity()
 } contentStates: {
-    AchivoWidgetAttributes.ContentState.smiley
-    AchivoWidgetAttributes.ContentState.starEyes
+    AchivoWidgetAttributes.ContentState.sunnyProgress
+    AchivoWidgetAttributes.ContentState.fieryProgress
 }
