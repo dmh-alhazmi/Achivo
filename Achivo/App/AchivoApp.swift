@@ -7,11 +7,16 @@
 
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 @main
 struct AchivoApp: App {
     
     @State private var router = AppRouter()
+    
+    init() {
+        UNUserNotificationCenter.current().delegate = AchivoNotificationDelegate.shared
+    }
     
     var body: some Scene {
         WindowGroup {

@@ -287,8 +287,16 @@ private extension AddGoalView {
         
         do {
             try modelContext.save()
+            
+            Task {
+                await AchivoNotificationManager.scheduleDailyNotifications(
+                    for: selectedEnergy
+                )
+            }
+            
             router.goToGoals()
             dismiss()
+            
         } catch {
             print("Failed to save goal:", error.localizedDescription)
         }

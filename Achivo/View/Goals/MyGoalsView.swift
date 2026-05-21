@@ -42,6 +42,7 @@ struct MyGoalsView: View {
                     VStack(spacing: 20) {
                         header
                         goalsList
+                        
                     }
                     .padding(.horizontal, 18)
                     .padding(.top, 24)
