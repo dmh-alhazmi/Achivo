@@ -11,19 +11,45 @@ import ActivityKit
 
 // MARK: - Home Screen Widget Models
 
-struct WidgetTaskProgress: Codable, Identifiable {
+struct WidgetTaskProgress: Codable, Identifiable, Hashable {
     let id: String
     let title: String
     let isCompleted: Bool
 }
 
-struct WidgetGoalProgress: Codable, Identifiable {
+struct WidgetGoalProgress: Codable, Identifiable, Hashable {
     let id: String
     let title: String
     let completedDays: Int
     let durationDays: Int
     let energyRawValue: String
     let tasks: [WidgetTaskProgress]
+}
+
+// MARK: - Goal Helpers
+
+extension WidgetGoalProgress {
+    
+    var completedTaskCount: Int {
+        tasks.filter { $0.isCompleted }.count
+    }
+    
+    var progress: Double {
+        if !tasks.isEmpty {
+            return Double(completedTaskCount) / Double(tasks.count)
+        }
+        
+        guard durationDays > 0 else { return 0 }
+        return Double(completedDays) / Double(durationDays)
+    }
+    
+    var progressPercent: Int {
+        min(max(Int(progress * 100), 0), 100)
+    }
+    
+    var energy: GrowthEnergy {
+        GrowthEnergy(rawValue: energyRawValue) ?? .sunny
+    }
 }
 
 // MARK: - Live Activity Attributes
@@ -37,9 +63,11 @@ struct AchivoWidgetAttributes: ActivityAttributes {
         var totalTasks: Int
         var energyRawValue: String
     }
-
+    
     var name: String
 }
+
+// MARK: - Live Activity Helpers
 
 extension AchivoWidgetAttributes.ContentState {
     
@@ -142,7 +170,13 @@ enum AchivoLiveActivityManager {
     
     static func endGoalLiveActivity() async {
         for activity in Activity<AchivoWidgetAttributes>.activities {
-            await activity.end(nil, dismissalPolicy: .immediate)
+            await activity.end(
+                ActivityContent(
+                    state: activity.content.state,
+                    staleDate: nil
+                ),
+                dismissalPolicy: .immediate
+            )
         }
     }
 }

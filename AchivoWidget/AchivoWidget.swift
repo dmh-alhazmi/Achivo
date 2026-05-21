@@ -8,44 +8,6 @@
 import WidgetKit
 import SwiftUI
 
-// MARK: - Widget Models
-
-struct WidgetTaskProgress: Codable, Identifiable {
-    let id: String
-    let title: String
-    let isCompleted: Bool
-}
-
-struct WidgetGoalProgress: Codable, Identifiable {
-    let id: String
-    let title: String
-    let completedDays: Int
-    let durationDays: Int
-    let energyRawValue: String
-    let tasks: [WidgetTaskProgress]
-    
-    var progress: Double {
-        if !tasks.isEmpty {
-            return Double(completedTaskCount) / Double(tasks.count)
-        }
-        
-        guard durationDays > 0 else { return 0 }
-        return Double(completedDays) / Double(durationDays)
-    }
-    
-    var progressPercent: Int {
-        Int(progress * 100)
-    }
-    
-    var completedTaskCount: Int {
-        tasks.filter { $0.isCompleted }.count
-    }
-    
-    var energy: GrowthEnergy {
-        GrowthEnergy(rawValue: energyRawValue) ?? .sunny
-    }
-}
-
 // MARK: - Provider
 
 struct AchivoWidgetProvider: AppIntentTimelineProvider {
@@ -67,9 +29,21 @@ struct AchivoWidgetProvider: AppIntentTimelineProvider {
                     durationDays: 10,
                     energyRawValue: GrowthEnergy.sunny.rawValue,
                     tasks: [
-                        WidgetTaskProgress(id: UUID().uuidString, title: "Read 5 pages", isCompleted: true),
-                        WidgetTaskProgress(id: UUID().uuidString, title: "Highlight ideas", isCompleted: false),
-                        WidgetTaskProgress(id: UUID().uuidString, title: "Write summary", isCompleted: false)
+                        WidgetTaskProgress(
+                            id: UUID().uuidString,
+                            title: "Read 5 pages",
+                            isCompleted: true
+                        ),
+                        WidgetTaskProgress(
+                            id: UUID().uuidString,
+                            title: "Write notes",
+                            isCompleted: false
+                        ),
+                        WidgetTaskProgress(
+                            id: UUID().uuidString,
+                            title: "Finish chapter",
+                            isCompleted: false
+                        )
                     ]
                 )
             ]
@@ -137,6 +111,7 @@ struct AchivoWidgetProvider: AppIntentTimelineProvider {
         do {
             return try JSONDecoder().decode([WidgetGoalProgress].self, from: data)
         } catch {
+            print("Widget decode error:", error.localizedDescription)
             return []
         }
     }
@@ -230,18 +205,14 @@ struct AchivoWidgetEntryView: View {
     private var multipleGoalsView: some View {
         VStack(alignment: .leading, spacing: 8) {
             
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Your Goals")
-                        .font(.headline)
-                        .fontWeight(.bold)
-                    
-                    Text("Progress & tasks")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Your Goals")
+                    .font(.headline)
+                    .fontWeight(.bold)
                 
-                Spacer()
+                Text("Progress & tasks")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
             
             VStack(spacing: 7) {
@@ -305,6 +276,7 @@ struct AchivoWidgetEntryView: View {
     
     private var emptyWidgetView: some View {
         VStack(alignment: .leading, spacing: 8) {
+            
             Image(entry.energy.assetName)
                 .resizable()
                 .scaledToFit()
@@ -334,7 +306,9 @@ struct AchivoWidgetEntryView: View {
                 
                 Capsule()
                     .fill(color)
-                    .frame(width: geometry.size.width * min(max(progress, 0), 1))
+                    .frame(
+                        width: geometry.size.width * min(max(progress, 0), 1)
+                    )
             }
         }
         .frame(height: 7)
@@ -384,9 +358,21 @@ struct AchivoWidget: Widget {
                 durationDays: 10,
                 energyRawValue: GrowthEnergy.sunny.rawValue,
                 tasks: [
-                    WidgetTaskProgress(id: UUID().uuidString, title: "Read 5 pages", isCompleted: true),
-                    WidgetTaskProgress(id: UUID().uuidString, title: "Write notes", isCompleted: false),
-                    WidgetTaskProgress(id: UUID().uuidString, title: "Finish chapter", isCompleted: false)
+                    WidgetTaskProgress(
+                        id: UUID().uuidString,
+                        title: "Read 5 pages",
+                        isCompleted: true
+                    ),
+                    WidgetTaskProgress(
+                        id: UUID().uuidString,
+                        title: "Write notes",
+                        isCompleted: false
+                    ),
+                    WidgetTaskProgress(
+                        id: UUID().uuidString,
+                        title: "Finish chapter",
+                        isCompleted: false
+                    )
                 ]
             )
         ]

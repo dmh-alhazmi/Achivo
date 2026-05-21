@@ -12,7 +12,7 @@ import SwiftUI
 struct AchivoWidgetBundle: WidgetBundle {
     var body: some Widget {
         AchivoWidget()
-       // AchivoWidgetControl()
+        AchivoWidgetControl()
         AchivoWidgetLiveActivity()
     }
 }

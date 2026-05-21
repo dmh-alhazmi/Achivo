@@ -9,34 +9,6 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-// MARK: - Live Activity Attributes
-
-struct AchivoWidgetAttributes: ActivityAttributes {
-    
-    public struct ContentState: Codable, Hashable {
-        var goalTitle: String
-        var progressPercent: Int
-        var completedTasks: Int
-        var totalTasks: Int
-        var energyRawValue: String
-    }
-
-    var name: String
-}
-
-// MARK: - Helpers
-
-extension AchivoWidgetAttributes.ContentState {
-    
-    var energy: GrowthEnergy {
-        GrowthEnergy(rawValue: energyRawValue) ?? .sunny
-    }
-    
-    var safeProgress: Int {
-        min(max(progressPercent, 0), 100)
-    }
-}
-
 // MARK: - Live Activity Widget
 
 struct AchivoWidgetLiveActivity: Widget {
@@ -44,9 +16,8 @@ struct AchivoWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: AchivoWidgetAttributes.self) { context in
             
-            // MARK: Lock Screen / Banner UI
-            
             HStack(spacing: 12) {
+                
                 Image(context.state.energy.assetName)
                     .resizable()
                     .scaledToFit()
@@ -78,12 +49,10 @@ struct AchivoWidgetLiveActivity: Widget {
             .padding()
             .activityBackgroundTint(context.state.energy.color.opacity(0.15))
             .activitySystemActionForegroundColor(context.state.energy.color)
-
+            
         } dynamicIsland: { context in
             
             DynamicIsland {
-                
-                // MARK: Expanded Dynamic Island
                 
                 DynamicIslandExpandedRegion(.leading) {
                     Image(context.state.energy.assetName)
@@ -122,16 +91,12 @@ struct AchivoWidgetLiveActivity: Widget {
                 
             } compactLeading: {
                 
-                // MARK: Compact Left
-                
                 Image(context.state.energy.assetName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 22, height: 22)
                 
             } compactTrailing: {
-                
-                // MARK: Compact Right
                 
                 Text("\(context.state.safeProgress)%")
                     .font(.caption)
@@ -140,14 +105,15 @@ struct AchivoWidgetLiveActivity: Widget {
                 
             } minimal: {
                 
-                // MARK: Minimal
-                
                 ZStack {
                     Circle()
                         .stroke(context.state.energy.color.opacity(0.3), lineWidth: 2)
                     
                     Circle()
-                        .trim(from: 0, to: Double(context.state.safeProgress) / 100)
+                        .trim(
+                            from: 0,
+                            to: Double(context.state.safeProgress) / 100
+                        )
                         .stroke(context.state.energy.color, lineWidth: 2)
                         .rotationEffect(.degrees(-90))
                     
@@ -184,6 +150,7 @@ struct AchivoWidgetLiveActivity: Widget {
 // MARK: - Preview
 
 extension AchivoWidgetAttributes {
+    
     fileprivate static var preview: AchivoWidgetAttributes {
         AchivoWidgetAttributes(name: "Achivo Progress")
     }

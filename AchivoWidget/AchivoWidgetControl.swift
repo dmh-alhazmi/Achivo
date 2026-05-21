@@ -10,7 +10,7 @@ import SwiftUI
 import WidgetKit
 
 struct AchivoWidgetControl: ControlWidget {
-    static let kind: String = "Achivo.Deemah.com.Achivo.AchivoWidget"
+    static let kind: String = "Achivo.TeamTenn.com.Achivo.AchivoWidgetExtension"
 
     var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(

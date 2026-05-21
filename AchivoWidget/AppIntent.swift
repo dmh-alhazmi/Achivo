@@ -9,12 +9,16 @@ import WidgetKit
 import AppIntents
 
 struct ConfigurationAppIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Growth Energy" }
+    
+    static var title: LocalizedStringResource {
+        "Growth Energy"
+    }
+    
     static var description: IntentDescription {
         "Choose which growth character appears in your widget."
     }
     
-    @Parameter(title: "Growth Energy", default: "fiery")
+    @Parameter(title: "Growth Energy", default: "sunny")
     var growthEnergy: String
 }
 
