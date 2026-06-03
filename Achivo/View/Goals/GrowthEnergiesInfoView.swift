@@ -58,8 +58,6 @@ private extension GrowthEnergiesInfoView {
         Image("AppBackground")
             .resizable()
             .scaledToFill()
-            .frame(width: width, height: height)
-            .clipped()
             .ignoresSafeArea()
     }
     

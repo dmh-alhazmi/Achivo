@@ -39,11 +39,9 @@ struct PersonalityOnboardingView: View {
         let height = geo.size.height
         
         return ZStack {
-            Image("onboarding_background")
+            Image("AppBackground")
                 .resizable()
                 .scaledToFill()
-                .frame(width: width, height: height)
-                .clipped()
                 .ignoresSafeArea()
             
             TabView(selection: $currentIndex) {

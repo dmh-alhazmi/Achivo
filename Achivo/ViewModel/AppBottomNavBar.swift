@@ -183,7 +183,7 @@ private struct BottomNavItem: View {
         VStack {
             Spacer()
             
-            AppBottomNavBar(selectedTab: .constant(.goal))
+            AppBottomNavBar(selectedTab: .constant(.badge))
                 .padding(.horizontal, 18)
                 .padding(.bottom, 20)
         }

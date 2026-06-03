@@ -44,7 +44,7 @@ struct BadgesView: View {
                         badgesGrid
                     }
                 }
-                .padding(.bottom, 110)
+                .padding(.bottom, 180)
             }
             
             if let selectedBadge {
@@ -70,8 +70,8 @@ private extension BadgesView {
     
     var background: some View {
         Image("AppBackground")
-            .resizable()
-            .scaledToFill()
+            //.resizable()
+          //  .scaledToFill()
             .ignoresSafeArea()
     }
     
