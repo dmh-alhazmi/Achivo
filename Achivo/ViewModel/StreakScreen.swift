@@ -1,10 +1,3 @@
-//
-//  StreakScreen.swift
-//  Achivo
-//
-//  Created by Deemah Alhazmi on 18/05/2026.
-//
-
 
 //
 //  StreakScreen.swift
@@ -109,17 +102,18 @@ struct StreakScreen: View {
         }
     }
     
+    
     private var header: some View {
         HStack {
-            
+
             Spacer()
-            
+
             Text("Streak")
                 .font(.system(size: 22, weight: .bold))
                 .foregroundColor(.black)
-            
+
             Spacer()
-            
+
             Button {
                 showInfo = true
             } label: {
@@ -130,6 +124,7 @@ struct StreakScreen: View {
             }
         }
         .padding(.horizontal, 22)
+        .padding(.top, 25)
     }
     
     private var streakCircle: some View {
@@ -154,19 +149,12 @@ struct StreakScreen: View {
         }
     }
     
+    
     private var background: some View {
-        LinearGradient(
-            colors: [
-                Color(red: 1.0, green: 0.97, blue: 0.92),
-                Color(red: 0.98, green: 0.90, blue: 0.80)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .ignoresSafeArea()
-        .overlay {
-            DecorativeBackground()
-        }
+        Image("AppBackground")
+            .resizable()
+            .scaledToFill()
+            .ignoresSafeArea()
     }
     
     private func setupMonths() {
@@ -180,17 +168,6 @@ struct StreakScreen: View {
             calendar.date(byAdding: .month, value: $0, to: currentMonth)
         }
     }
-//    private func setupMonths() {
-//        guard months.isEmpty else { return }
-//
-//        let currentMonth = calendar.date(
-//            from: calendar.dateComponents([.year, .month], from: Date())
-//        ) ?? Date()
-//
-//        months = (-12...24).compactMap {
-//            calendar.date(byAdding: .month, value: $0, to: currentMonth)
-//        }
-//    }
     
     private func loadMoreIfNeeded(_ month: Date) {
         guard month == months.last else { return }

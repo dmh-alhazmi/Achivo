@@ -69,7 +69,7 @@ struct BadgesView: View {
 private extension BadgesView {
     
     var background: some View {
-        Image("background")
+        Image("AppBackground")
             .resizable()
             .scaledToFill()
             .ignoresSafeArea()

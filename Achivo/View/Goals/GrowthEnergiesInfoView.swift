@@ -55,7 +55,7 @@ struct GrowthEnergiesInfoView: View {
 private extension GrowthEnergiesInfoView {
     
     func background(width: CGFloat, height: CGFloat) -> some View {
-        Image("onboarding_background")
+        Image("AppBackground")
             .resizable()
             .scaledToFill()
             .frame(width: width, height: height)

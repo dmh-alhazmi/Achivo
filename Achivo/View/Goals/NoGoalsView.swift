@@ -41,24 +41,12 @@ struct NoGoalsView: View {
 private extension NoGoalsView {
     
     func background(width: CGFloat, height: CGFloat) -> some View {
-        Image("onboarding_background")
+        Image("AppBackground")
             .resizable()
-            .scaledToFill()
-            .frame(width: width, height: height)
-            .clipped()
+            .aspectRatio(contentMode: .fill)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .ignoresSafeArea()
     }
-    
-//    func backButton(width: CGFloat, height: CGFloat) -> some View {
-//        Button {
-//            onBack()
-//        } label: {
-//            Image(systemName: "chevron.left")
-//                .font(.system(size: width * 0.052, weight: .medium))
-//                .foregroundColor(.black)
-//        }
-//        .position(x: width * 0.13, y: height * 0.085)
-//    }
     
     func titleSection(width: CGFloat, height: CGFloat) -> some View {
         VStack(spacing: height * 0.016) {
