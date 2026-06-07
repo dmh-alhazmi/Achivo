@@ -79,7 +79,7 @@ private extension NoGoalsView {
     }
     
     func plantImage(width: CGFloat, height: CGFloat) -> some View {
-        Image("plant_icon")
+        Image("Plant_icon")
             .resizable()
             .scaledToFit()
             .frame(width: width * 0.28, height: height * 0.22)

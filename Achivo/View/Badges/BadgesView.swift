@@ -11,6 +11,7 @@ import SwiftData
 struct BadgesView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     
     @Query(sort: \AchievementBadge.name, order: .forward)
     private var badges: [AchievementBadge]
@@ -35,7 +36,6 @@ struct BadgesView: View {
             
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 28) {
-                    
                     header
                     
                     if orderedBadges.isEmpty {
@@ -44,7 +44,7 @@ struct BadgesView: View {
                         badgesGrid
                     }
                 }
-                .padding(.bottom, 180)
+                .padding(.bottom, 110)
             }
             
             if let selectedBadge {
@@ -68,10 +68,26 @@ struct BadgesView: View {
 
 private extension BadgesView {
     
+    var primaryTextColor: Color {
+        colorScheme == .dark ? Color(red: 1.0, green: 0.96, blue: 0.88) : .black
+    }
+
+    var secondaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.86, green: 0.80, blue: 0.70)
+        : .black.opacity(0.55)
+    }
+
+    var mutedTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.86, green: 0.80, blue: 0.70).opacity(0.8)
+        : .secondary
+    }
+    
     var background: some View {
         Image("AppBackground")
-            //.resizable()
-          //  .scaledToFill()
+            .resizable()
+//            .scaledToFill()
             .ignoresSafeArea()
     }
     
@@ -79,12 +95,12 @@ private extension BadgesView {
         VStack(spacing: 8) {
             Text("The Badges")
                 .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.black)
+                .foregroundStyle(primaryTextColor)
                 .padding(.top, 70)
             
             Text("\(unlockedCount) collected • \(lockedCount) locked")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.black.opacity(0.55))
+                .foregroundStyle(secondaryTextColor)
         }
     }
     
@@ -119,11 +135,11 @@ private extension BadgesView {
             Text("No badges yet")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundStyle(.black)
+                .foregroundStyle(primaryTextColor)
             
             Text("Complete goals and build streaks to collect badges.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(mutedTextColor)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 36)
         }
@@ -163,21 +179,20 @@ private struct BadgeCardView: View {
             Image("Badge")
                 .resizable()
                 .scaledToFit()
-                .opacity(badge.isUnlocked ? 1 : 0.7)
+                .opacity(badge.isUnlocked ? 1 : 0.9)
             
             VStack(spacing: 5) {
-                
                 Image(badge.iconName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 54, height: 54)
-                    .opacity(badge.isUnlocked ? 1 : 0.23)
+                    .opacity(badge.isUnlocked ? 1 : 0.35)
                     .saturation(badge.isUnlocked ? 1 : 0)
                     .padding(.top, 18)
                 
                 Text(badge.isUnlocked ? badge.name : "Locked Badge")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.black.opacity(badge.isUnlocked ? 1 : 0.45))
+                    .foregroundStyle(.black.opacity(badge.isUnlocked ? 1 : 0.60))
                     .multilineTextAlignment(.center)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -196,7 +211,7 @@ private struct BadgeCardView: View {
                 Text(badge.earnedDate?.badgeDateFormat ?? "Not collected yet")
                     .font(.system(size: 7, weight: .medium))
                     .foregroundStyle(.black.opacity(0.5))
-                    .padding(.bottom, 12)
+                    .padding(.bottom, 18)
             }
             .frame(width: 124, height: 154)
         }
@@ -247,7 +262,6 @@ private struct BadgePopupView: View {
                     .shadow(color: .black.opacity(0.15), radius: 18, x: 0, y: 8)
                 
                 VStack(spacing: 18) {
-                    
                     ZStack {
                         Image("Badge")
                             .resizable()
@@ -256,7 +270,6 @@ private struct BadgePopupView: View {
                             .opacity(badge.isUnlocked ? 1 : 0.7)
                         
                         VStack(spacing: 7) {
-                            
                             Image(badge.iconName)
                                 .resizable()
                                 .scaledToFit()
@@ -283,7 +296,7 @@ private struct BadgePopupView: View {
                             Text(badge.earnedDate?.badgeDateFormat ?? "Not collected yet")
                                 .font(.system(size: 9, weight: .medium))
                                 .foregroundStyle(.black.opacity(0.55))
-                                .padding(.bottom, 18)
+                                .padding(.bottom, 28)
                         }
                         .frame(width: 175, height: 210)
                     }

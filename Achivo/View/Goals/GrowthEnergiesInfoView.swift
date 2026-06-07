@@ -178,7 +178,7 @@ private extension GrowthEnergiesInfoView {
     }
     
     func decorativePlant(width: CGFloat, height: CGFloat) -> some View {
-        Image("plant_icon")
+        Image("Plant_icon")
             .resizable()
             .scaledToFit()
             .frame(width: width * 0.20)

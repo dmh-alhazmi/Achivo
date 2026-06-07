@@ -153,7 +153,7 @@ struct StreakScreen: View {
     private var background: some View {
         Image("AppBackground")
             .resizable()
-            .scaledToFill()
+            //.scaledToFill()
             .ignoresSafeArea()
     }
     
@@ -222,7 +222,7 @@ struct MonthCalendarView: View {
                 ForEach(weekdays, id: \.self) { day in
                     Text(day)
                         .font(.system(size: 7, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                 }
                 
                 ForEach(0..<leadingSpaces, id: \.self) { _ in
