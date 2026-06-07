@@ -12,6 +12,7 @@ import WidgetKit
 struct GoalDetailsView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     
     @Query(sort: \Goal.createdAt, order: .reverse)
     private var goals: [Goal]
@@ -52,6 +53,7 @@ struct GoalDetailsView: View {
         }
         .navigationTitle("Goal Details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(colorScheme, for: .navigationBar)
         .overlay {
             if let earnedBadge {
                 BadgeCelebrationPopup(badge: earnedBadge) {
@@ -59,6 +61,55 @@ struct GoalDetailsView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Colors
+
+// MARK: - Colors
+
+private extension GoalDetailsView {
+    
+    var primaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 1.0, green: 0.98, blue: 0.92)
+        : .black
+    }
+    
+    var secondaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.94, green: 0.90, blue: 0.82)
+        : .black.opacity(0.58)
+    }
+    
+    var cardBackgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.22, green: 0.22, blue: 0.19)
+        : Color.white.opacity(0.86)
+    }
+    
+    var cardBorderColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.35)
+        : energy.color.opacity(0.18)
+    }
+    
+    var trackColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.30)
+        : Color.gray.opacity(0.14)
+    }
+    
+    var dividerColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.35)
+        : Color.black.opacity(0.12)
+    }
+    
+    var iconBackgroundColor: Color {
+        colorScheme == .dark
+        ? energy.color.opacity(0.28)
+        : energy.color.opacity(0.12)
     }
 }
 
@@ -70,7 +121,7 @@ private extension GoalDetailsView {
         VStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(energy.color.opacity(0.16))
+                    .fill(energy.color.opacity(colorScheme == .dark ? 0.22 : 0.16))
                     .frame(width: 150, height: 150)
                 
                 Image(energy.assetName)
@@ -79,19 +130,21 @@ private extension GoalDetailsView {
                     .frame(height: 118)
             }
             
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 Text(goal.subGoal)
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(primaryTextColor)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                 
                 Text("Guided by \(energy.name) • \(energy.title)")
                     .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(secondaryTextColor)
                     .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
             }
             
             statusBadge
@@ -100,11 +153,11 @@ private extension GoalDetailsView {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 28)
-                .fill(Color.white.opacity(0.86))
+                .fill(cardBackgroundColor)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 28)
-                .stroke(energy.color.opacity(0.18), lineWidth: 1)
+                .stroke(cardBorderColor, lineWidth: 1)
         )
     }
     
@@ -122,7 +175,7 @@ private extension GoalDetailsView {
         .padding(.vertical, 7)
         .background(
             Capsule()
-                .fill((goal.isFinished ? Color.green : energy.color).opacity(0.13))
+                .fill((goal.isFinished ? Color.green : energy.color).opacity(colorScheme == .dark ? 0.22 : 0.13))
         )
     }
     
@@ -134,17 +187,18 @@ private extension GoalDetailsView {
                 Text("Progress")
                     .font(.headline)
                     .fontWeight(.bold)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(primaryTextColor)
                 
                 Text("\(goal.completedDays) of \(goal.durationDays) days completed")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .fontWeight(.medium)
+                    .foregroundStyle(secondaryTextColor)
                 
                 progressBar
                 
                 Text(goal.isFinished ? "Amazing! You reached your goal." : "\(goal.remainingDays) days remaining")
                     .font(.caption)
-                    .fontWeight(.semibold)
+                    .fontWeight(.bold)
                     .foregroundStyle(goal.isFinished ? .green : energy.color)
             }
             
@@ -153,14 +207,18 @@ private extension GoalDetailsView {
         .padding(18)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color.white.opacity(0.86))
+                .fill(cardBackgroundColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(cardBorderColor, lineWidth: 1)
         )
     }
     
     var progressCircle: some View {
         ZStack {
             Circle()
-                .stroke(Color.gray.opacity(0.14), lineWidth: 10)
+                .stroke(trackColor, lineWidth: 10)
             
             Circle()
                 .trim(from: 0, to: progress)
@@ -174,11 +232,12 @@ private extension GoalDetailsView {
                 Text("\(progressPercent)%")
                     .font(.headline)
                     .fontWeight(.bold)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(primaryTextColor)
                 
                 Text("done")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .fontWeight(.medium)
+                    .foregroundStyle(secondaryTextColor)
             }
         }
         .frame(width: 86, height: 86)
@@ -188,7 +247,7 @@ private extension GoalDetailsView {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.gray.opacity(0.14))
+                    .fill(trackColor)
                 
                 Capsule()
                     .fill(goal.isFinished ? Color.green : energy.color)
@@ -240,26 +299,32 @@ private extension GoalDetailsView {
                 .frame(width: 34, height: 34)
                 .background(
                     Circle()
-                        .fill(energy.color.opacity(0.12))
+                        .fill(iconBackgroundColor)
                 )
             
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(secondaryTextColor)
                 
                 Text(value)
                     .font(.subheadline)
                     .fontWeight(.bold)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(primaryTextColor)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.86))
+                .fill(cardBackgroundColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(cardBorderColor, lineWidth: 1)
         )
     }
     
@@ -310,10 +375,10 @@ private extension GoalDetailsView {
             Text("Goal Summary")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundStyle(.black)
+                .foregroundStyle(primaryTextColor)
             
             Divider()
-                .opacity(0.5)
+                .background(dividerColor)
             
             infoRow(
                 icon: "target",
@@ -331,7 +396,11 @@ private extension GoalDetailsView {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color.white.opacity(0.86))
+                .fill(cardBackgroundColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(cardBorderColor, lineWidth: 1)
         )
     }
     
@@ -343,18 +412,19 @@ private extension GoalDetailsView {
                 .frame(width: 30, height: 30)
                 .background(
                     Circle()
-                        .fill(energy.color.opacity(0.12))
+                        .fill(iconBackgroundColor)
                 )
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(secondaryTextColor)
                 
                 Text(value)
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(primaryTextColor)
                     .fixedSize(horizontal: false, vertical: true)
             }
             
@@ -370,30 +440,43 @@ private struct BadgeCelebrationPopup: View {
     let badge: AchievementBadge
     let onClose: () -> Void
     
+    @Environment(\.colorScheme) private var colorScheme
+    
+    private var popupBackgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.16)
+        : .white
+    }
+    
+    private var primaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 1.0, green: 0.97, blue: 0.90)
+        : .black
+    }
+    
+    private var secondaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.90, green: 0.86, blue: 0.76)
+        : .secondary
+    }
+    
     var body: some View {
         ZStack {
             Color.black.opacity(0.30)
                 .ignoresSafeArea()
             
             VStack(spacing: 16) {
-//                Text("🎉")
-//                    .font(.system(size: 54))
-                
                 Image(badge.iconName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 86, height: 86)
                     .padding(16)
-//                    .background(
-//                        Circle()
-//                            .fill(Color.green.opacity(0.12))
-//                    )
                 
                 VStack(spacing: 6) {
                     Text("New Badge Collected!")
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundStyle(.black)
+                        .foregroundStyle(primaryTextColor)
                     
                     Text(badge.name)
                         .font(.headline)
@@ -402,7 +485,8 @@ private struct BadgeCelebrationPopup: View {
                     
                     Text(badge.badgeDescription)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .fontWeight(.medium)
+                        .foregroundStyle(secondaryTextColor)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 8)
                 }
@@ -427,7 +511,7 @@ private struct BadgeCelebrationPopup: View {
             .frame(maxWidth: 310)
             .background(
                 RoundedRectangle(cornerRadius: 28)
-                    .fill(Color.white)
+                    .fill(popupBackgroundColor)
             )
             .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 10)
             .padding(.horizontal, 28)

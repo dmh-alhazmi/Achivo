@@ -11,6 +11,8 @@ struct GrowthEnergiesInfoView: View {
     
     let onBack: () -> Void
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     @State private var selectedEnergy: GrowthEnergy? = .fiery
     
     private let energies = GrowthEnergy.allCases
@@ -50,6 +52,53 @@ struct GrowthEnergiesInfoView: View {
     }
 }
 
+// MARK: - Colors
+
+private extension GrowthEnergiesInfoView {
+    
+    var primaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 1.0, green: 0.97, blue: 0.90)
+        : .black
+    }
+    
+    var secondaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.92, green: 0.88, blue: 0.78)
+        : Color(red: 0.42, green: 0.42, blue: 0.42)
+    }
+    
+    var cardBackgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.22, green: 0.22, blue: 0.19)
+        : Color.white.opacity(0.58)
+    }
+    
+    var cardBorderColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.32)
+        : Color.black.opacity(0.18)
+    }
+    
+    var selectedCardBorderColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.45)
+        : Color.black.opacity(0.18)
+    }
+    
+    var cardShadowColor: Color {
+        colorScheme == .dark
+        ? Color.black.opacity(0.30)
+        : Color.black.opacity(0.04)
+    }
+    
+    var bodyTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.95, green: 0.91, blue: 0.82)
+        : Color(red: 0.23, green: 0.23, blue: 0.23)
+    }
+}
+
 // MARK: - UI
 
 private extension GrowthEnergiesInfoView {
@@ -67,29 +116,30 @@ private extension GrowthEnergiesInfoView {
         } label: {
             Image(systemName: "chevron.left")
                 .font(.system(size: width * 0.052, weight: .medium))
-                .foregroundColor(.black)
+                .foregroundStyle(primaryTextColor)
         }
         .position(x: width * 0.13, y: height * 0.085)
+        .accessibilityLabel("Back")
     }
     
     func header(width: CGFloat) -> some View {
         VStack(spacing: 8) {
             (
                 Text("Meet your ")
-                    .foregroundColor(.black)
+                    .foregroundColor(primaryTextColor)
                 +
                 Text("growth")
                     .foregroundColor(Color(red: 0.39, green: 0.58, blue: 0.04))
                 +
                 Text(" energies")
-                    .foregroundColor(.black)
+                    .foregroundColor(primaryTextColor)
             )
             .font(.system(size: width * 0.057, weight: .bold))
             .multilineTextAlignment(.center)
             
             Text("Each energy has a unique strength\nChoose the one that fits you, or collect them all!")
                 .font(.system(size: width * 0.035, weight: .regular))
-                .foregroundColor(Color(red: 0.42, green: 0.42, blue: 0.42))
+                .foregroundStyle(secondaryTextColor)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
         }
@@ -109,13 +159,16 @@ private extension GrowthEnergiesInfoView {
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: width * 0.04, style: .continuous)
-                    .fill(Color.white.opacity(0.58))
+                    .fill(cardBackgroundColor)
                     .overlay(
                         RoundedRectangle(cornerRadius: width * 0.04, style: .continuous)
-                            .stroke(Color.black.opacity(0.18), lineWidth: 0.7)
+                            .stroke(
+                                isSelected ? energy.color.opacity(0.85) : cardBorderColor,
+                                lineWidth: isSelected ? 1.4 : 0.8
+                            )
                     )
                     .shadow(
-                        color: isSelected ? energy.color.opacity(0.18) : .black.opacity(0.04),
+                        color: isSelected ? energy.color.opacity(0.22) : cardShadowColor,
                         radius: isSelected ? 12 : 5,
                         x: 0,
                         y: isSelected ? 6 : 2
@@ -135,6 +188,7 @@ private extension GrowthEnergiesInfoView {
                             width: width * characterWidth(for: energy),
                             height: height * 0.13
                         )
+                        .accessibilityHidden(true)
                 }
             }
             .frame(height: height * 0.145)
@@ -152,27 +206,25 @@ private extension GrowthEnergiesInfoView {
             VStack(alignment: .leading, spacing: 4) {
                 Text(energy.name)
                     .font(.system(size: width * 0.048, weight: .bold))
-                    .foregroundColor(energy.color)
+                    .foregroundStyle(energy.color)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 
                 Text(energy.title)
                     .font(.system(size: width * 0.032, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundStyle(primaryTextColor)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
             }
             .frame(width: width * 0.31, alignment: .leading)
             
             Text(infoText(for: energy))
                 .font(.system(size: width * 0.026, weight: .semibold))
-                .foregroundColor(Color(red: 0.23, green: 0.23, blue: 0.23))
+                .foregroundStyle(bodyTextColor)
                 .lineSpacing(2)
+                .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
-//            Image(energy.assetName)
-//                .resizable()
-//                .scaledToFit()
-//                .frame(
-//                    width: width * 0.16,
-//                    height: height * 0.09
-//                )
+                .minimumScaleFactor(0.85)
         }
         .padding(.horizontal, width * 0.052)
     }
@@ -182,6 +234,7 @@ private extension GrowthEnergiesInfoView {
             .resizable()
             .scaledToFit()
             .frame(width: width * 0.20)
+            .opacity(colorScheme == .dark ? 0.55 : 1)
             .position(x: width * 0.82, y: height * 0.92)
     }
     

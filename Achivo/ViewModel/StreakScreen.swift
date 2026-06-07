@@ -1,15 +1,17 @@
-
 //
 //  StreakScreen.swift
 //  Achivo
 //
 //  Created by Asma Khan on 30/11/1447 AH.
 //
+
 import SwiftUI
 import SwiftData
 
 struct StreakScreen: View {
+    
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     @Query(sort: \Goal.createdAt, order: .reverse)
     private var goals: [Goal]
@@ -33,7 +35,13 @@ struct StreakScreen: View {
         
         while completedDates.contains(date) {
             count += 1
-            guard let previousDay = calendar.date(byAdding: .day, value: -1, to: date) else { break }
+            guard let previousDay = calendar.date(
+                byAdding: .day,
+                value: -1,
+                to: date
+            ) else {
+                break
+            }
             date = previousDay
         }
         
@@ -49,7 +57,7 @@ struct StreakScreen: View {
                 
                 Text("Keep showing up, keep growing!")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.gray)
+                    .foregroundStyle(secondaryTextColor)
                     .padding(.top, 30)
                 
                 streakCircle
@@ -58,7 +66,7 @@ struct StreakScreen: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Your Journey")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundStyle(primaryTextColor)
                     
                     ScrollView(.vertical, showsIndicators: false) {
                         LazyVStack(spacing: 22) {
@@ -76,11 +84,11 @@ struct StreakScreen: View {
                         .padding(.vertical, 14)
                     }
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(red: 0.98, green: 0.90, blue: 0.80).opacity(0.85))
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(calendarCardColor)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.white.opacity(0.9), lineWidth: 1)
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(calendarBorderColor, lineWidth: 1)
                             )
                     )
                 }
@@ -101,47 +109,104 @@ struct StreakScreen: View {
             Text("Current streak is Day \(streakCount). Completed dates are based on checked goals.")
         }
     }
+}
+
+// MARK: - Colors
+
+private extension StreakScreen {
     
+    var primaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 1.0, green: 0.97, blue: 0.90)
+        : .black
+    }
     
-    private var header: some View {
+    var secondaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.92, green: 0.88, blue: 0.78)
+        : Color.gray
+    }
+    
+    var calendarCardColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.22, green: 0.22, blue: 0.19)
+        : Color(red: 0.98, green: 0.90, blue: 0.80).opacity(0.85)
+    }
+    
+    var calendarBorderColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.32)
+        : Color.white.opacity(0.9)
+    }
+    
+    var streakCircleColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.22, green: 0.22, blue: 0.19)
+        : Color(red: 0.98, green: 0.90, blue: 0.80)
+    }
+    
+    var accentGreen: Color {
+        Color(red: 0.42, green: 0.62, blue: 0.13)
+    }
+}
+
+// MARK: - UI
+
+private extension StreakScreen {
+    
+    var header: some View {
         HStack {
-
             Spacer()
-
+            
             Text("Streak")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.black)
-
+                .foregroundStyle(primaryTextColor)
+            
             Spacer()
-
+            
             Button {
                 showInfo = true
             } label: {
                 Image(systemName: "info.circle")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.black)
+                    .foregroundStyle(primaryTextColor)
                     .frame(width: 36, height: 36)
             }
+            .accessibilityLabel("Streak information")
         }
         .padding(.horizontal, 22)
         .padding(.top, 25)
     }
     
-    private var streakCircle: some View {
+    var streakCircle: some View {
         ZStack {
             Circle()
-                .fill(Color(red: 0.98, green: 0.90, blue: 0.80))
+                .fill(streakCircleColor)
                 .frame(width: 150, height: 150)
-                .shadow(color: .black.opacity(0.22), radius: 5, x: 0, y: 3)
+                .overlay(
+                    Circle()
+                        .stroke(
+                            colorScheme == .dark
+                            ? Color.white.opacity(0.25)
+                            : Color.white.opacity(0.55),
+                            lineWidth: 1
+                        )
+                )
+                .shadow(
+                    color: .black.opacity(colorScheme == .dark ? 0.32 : 0.22),
+                    radius: 5,
+                    x: 0,
+                    y: 3
+                )
             
             HStack(spacing: 5) {
                 Text("Day")
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.gray)
+                    .foregroundStyle(secondaryTextColor)
                 
                 Text("\(streakCount)")
                     .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(Color(red: 0.42, green: 0.62, blue: 0.13))
+                    .foregroundStyle(accentGreen)
                 
                 Text("🔥")
                     .font(.system(size: 17))
@@ -149,15 +214,19 @@ struct StreakScreen: View {
         }
     }
     
-    
-    private var background: some View {
+    var background: some View {
         Image("AppBackground")
             .resizable()
-            //.scaledToFill()
+           // .scaledToFill()
             .ignoresSafeArea()
     }
+}
+
+// MARK: - Logic
+
+private extension StreakScreen {
     
-    private func setupMonths() {
+    func setupMonths() {
         guard months.isEmpty else { return }
         
         let currentMonth = calendar.date(
@@ -169,7 +238,7 @@ struct StreakScreen: View {
         }
     }
     
-    private func loadMoreIfNeeded(_ month: Date) {
+    func loadMoreIfNeeded(_ month: Date) {
         guard month == months.last else { return }
         guard let last = months.last else { return }
         
@@ -181,12 +250,21 @@ struct StreakScreen: View {
     }
 }
 
+// MARK: - Month Calendar
+
 struct MonthCalendarView: View {
+    
     let monthDate: Date
     let completedDates: Set<Date>
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     private let calendar = Calendar.current
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
+    private let columns = Array(
+        repeating: GridItem(.flexible(), spacing: 8),
+        count: 7
+    )
+    
     private let weekdays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
     
     private var monthTitle: String {
@@ -197,7 +275,9 @@ struct MonthCalendarView: View {
     
     private var days: [Date] {
         guard let range = calendar.range(of: .day, in: .month, for: monthDate),
-              let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)) else {
+              let startOfMonth = calendar.date(
+                from: calendar.dateComponents([.year, .month], from: monthDate)
+              ) else {
             return []
         }
         
@@ -214,15 +294,15 @@ struct MonthCalendarView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(monthTitle)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundColor(.black)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(monthTitleColor)
                 .padding(.leading, 5)
             
             LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(weekdays, id: \.self) { day in
                     Text(day)
-                        .font(.system(size: 7, weight: .bold))
-                        .foregroundColor(.black)
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(weekdayColor)
                 }
                 
                 ForEach(0..<leadingSpaces, id: \.self) { _ in
@@ -236,36 +316,97 @@ struct MonthCalendarView: View {
             }
             
             Rectangle()
-                .fill(Color.black.opacity(0.25))
+                .fill(dividerColor)
                 .frame(height: 1)
                 .padding(.horizontal, 5)
                 .padding(.top, 2)
         }
     }
+}
+
+// MARK: - Month Calendar Colors
+
+private extension MonthCalendarView {
     
-    private func dayView(_ date: Date) -> some View {
+    var monthTitleColor: Color {
+        colorScheme == .dark
+        ? Color(red: 1.0, green: 0.97, blue: 0.90)
+        : .black
+    }
+    
+    var weekdayColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.90, green: 0.86, blue: 0.76)
+        : .black.opacity(0.75)
+    }
+    
+    var normalDayColor: Color {
+        colorScheme == .dark
+        ? Color(red: 1.0, green: 0.97, blue: 0.90)
+        : .black.opacity(0.82)
+    }
+    
+    var todayTextColor: Color {
+        colorScheme == .dark ? .black : .black
+    }
+    
+    var completedDayColor: Color {
+        .white
+    }
+    
+    var completedCircleColor: Color {
+        Color(red: 0.42, green: 0.62, blue: 0.13)
+    }
+    
+    var todayCircleColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.96, green: 0.82, blue: 0.42)
+        : Color(red: 0.78, green: 0.84, blue: 0.45)
+    }
+    
+    var dividerColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.25)
+        : Color.black.opacity(0.25)
+    }
+}
+
+// MARK: - Day View
+
+private extension MonthCalendarView {
+    
+    func dayView(_ date: Date) -> some View {
         let day = calendar.component(.day, from: date)
         let isCompleted = completedDates.contains(calendar.startOfDay(for: date))
         let isToday = calendar.isDateInToday(date)
         
         return Text("\(day)")
-            .font(.system(size: 15, weight: .semibold))
-            .foregroundColor(isCompleted ? .white : .white.opacity(0.95))
+            .font(.system(size: 15, weight: .bold))
+            .foregroundStyle(
+                isCompleted
+                ? completedDayColor
+                : isToday
+                ? todayTextColor
+                : normalDayColor
+            )
             .frame(width: 28, height: 28)
             .background(
                 Circle()
                     .fill(
                         isCompleted
-                        ? Color(red: 0.42, green: 0.62, blue: 0.13)
+                        ? completedCircleColor
                         : isToday
-                        ? Color(red: 0.78, green: 0.84, blue: 0.45)
+                        ? todayCircleColor
                         : Color.clear
                     )
             )
     }
 }
 
+// MARK: - Decorative Background
+
 struct DecorativeBackground: View {
+    
     var body: some View {
         ZStack {
             Circle()
@@ -291,6 +432,8 @@ struct DecorativeBackground: View {
         }
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     NavigationStack {

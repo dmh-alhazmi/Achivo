@@ -5,16 +5,15 @@
 //  Created by Deemah Alhazmi on 14/05/2026.
 //
 
-
 import SwiftUI
 import SwiftData
 
 struct AddGoalView: View {
     
-    
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(AppRouter.self) private var router
+    @Environment(\.colorScheme) private var colorScheme
     
     @State private var showingEnergyInfo: GrowthEnergy?
     @State private var showingCustomDatePicker: Bool = false
@@ -30,6 +29,9 @@ struct AddGoalView: View {
         value: 7,
         to: Date()
     ) ?? Date()
+    
+    @ScaledMetric(relativeTo: .body) private var textFieldMinHeight: CGFloat = 58
+    @ScaledMetric(relativeTo: .body) private var durationButtonMinHeight: CGFloat = 38
     
     private var canCreateGoal: Bool {
         !goalTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
@@ -77,7 +79,7 @@ struct AddGoalView: View {
         .navigationBarBackButtonHidden(true)
         .sheet(item: $showingEnergyInfo) { energy in
             GrowthEnergyInfoSheet(energy: energy)
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingCustomDatePicker) {
@@ -88,7 +90,7 @@ struct AddGoalView: View {
                 selectedDuration = .custom
                 showingCustomDatePicker = false
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
     }
@@ -98,8 +100,48 @@ struct AddGoalView: View {
 
 private extension AddGoalView {
     
-    var background: some View {
+    var backgroundColor: Color {
         Color("background")
+    }
+    
+    var primaryTextColor: Color {
+        colorScheme == .dark
+        ? /*Color(red: 1.0, green: 0.97, blue: 0.90)*/ .white
+        : .black
+    }
+    
+    var secondaryTextColor: Color {
+        colorScheme == .dark
+        ? /*Color(red: 0.92, green: 0.88, blue: 0.78)*/ .white
+        : .black.opacity(0.75)
+    }
+    
+    var placeholderTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.82, green: 0.78, blue: 0.70)
+        : .black.opacity(0.35)
+    }
+    
+    var fieldBackgroundColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.18)
+        : Color.white.opacity(0.78)
+    }
+    
+    var fieldBorderColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.35)
+        : Color.black.opacity(0.18)
+    }
+    
+    var unselectedButtonColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.18)
+        : Color.white.opacity(0.75)
+    }
+    
+    var background: some View {
+        backgroundColor
             .ignoresSafeArea()
     }
     
@@ -111,7 +153,8 @@ private extension AddGoalView {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(.black)
+                        .foregroundStyle(primaryTextColor)
+                        .accessibilityLabel("Back")
                 }
                 
                 Spacer()
@@ -120,7 +163,9 @@ private extension AddGoalView {
             Text("Add new goal")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundStyle(.black)
+                .foregroundStyle(primaryTextColor)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
         }
     }
     
@@ -145,7 +190,7 @@ private extension AddGoalView {
             Text("Duration")
                 .font(.title3)
                 .fontWeight(.bold)
-                .foregroundStyle(Color(red: 0.12, green: 0.16, blue: 0.24))
+                .foregroundStyle(primaryTextColor)
             
             HStack(spacing: 10) {
                 ForEach(GoalDuration.allCases) { duration in
@@ -160,7 +205,8 @@ private extension AddGoalView {
             Text("Pick your growth mode")
                 .font(.title3)
                 .fontWeight(.bold)
-                .foregroundStyle(.black)
+                .foregroundStyle(primaryTextColor)
+                .fixedSize(horizontal: false, vertical: true)
             
             LazyVGrid(
                 columns: [
@@ -191,10 +237,11 @@ private extension AddGoalView {
                 .font(.headline)
                 .fontWeight(.bold)
                 .foregroundStyle(.white)
-                .frame(width: 170, height: 48)
+                .padding(.horizontal, 28)
+                .frame(minHeight: 48)
                 .background(
                     Capsule()
-                        .fill(canCreateGoal ? Color.green : Color.gray.opacity(0.5))
+                        .fill(canCreateGoal ? Color.green : Color.gray.opacity(0.55))
                 )
         }
         .disabled(!canCreateGoal)
@@ -215,18 +262,30 @@ private extension AddGoalView {
             Text(title)
                 .font(.title3)
                 .fontWeight(.bold)
-                .foregroundStyle(.black)
+                .foregroundStyle(primaryTextColor)
+                .fixedSize(horizontal: false, vertical: true)
             
-            TextField(placeholder, text: text)
-                .font(.subheadline)
-                .padding(.horizontal, 16)
-                .frame(height: 58)
-                .background(Color.white.opacity(0.78))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.black.opacity(0.18), lineWidth: 1)
-                )
+            TextField(
+                "",
+                text: text,
+                prompt: Text(placeholder)
+                    .foregroundStyle(placeholderTextColor),
+                axis: .vertical
+            )
+            .font(.subheadline)
+            .fontWeight(.medium)
+            .foregroundStyle(primaryTextColor)
+            .tint(Color.green)
+            .lineLimit(1...3)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(minHeight: textFieldMinHeight)
+            .background(fieldBackgroundColor)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(fieldBorderColor, lineWidth: 1)
+            )
         }
     }
     
@@ -242,18 +301,21 @@ private extension AddGoalView {
         } label: {
             Text(durationTitle(for: duration))
                 .font(.caption)
-                .fontWeight(.medium)
-                .foregroundStyle(isSelected ? .white : .black.opacity(0.75))
-                .frame(height: 38)
+                .fontWeight(.semibold)
+                .foregroundStyle(isSelected ? .white : secondaryTextColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+                .multilineTextAlignment(.center)
+                .frame(height: durationButtonMinHeight)
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(isSelected ? Color.green : Color.white.opacity(0.75))
+                        .fill(isSelected ? Color.green : unselectedButtonColor)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(
-                            isSelected ? Color.green : Color.black.opacity(0.18),
+                            isSelected ? Color.green : fieldBorderColor,
                             lineWidth: 1
                         )
                 )
@@ -309,40 +371,68 @@ private struct GrowthEnergyInfoSheet: View {
     
     let energy: GrowthEnergy
     
+    @Environment(\.colorScheme) private var colorScheme
+    
+    private var backgroundColor: Color {
+        Color("background")
+    }
+    
+    private var primaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 1.0, green: 0.97, blue: 0.90)
+        : .black
+    }
+    
+    private var secondaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.92, green: 0.88, blue: 0.78)
+        : .secondary
+    }
+    
     var body: some View {
-        VStack(spacing: 18) {
-            Image(energy.assetName)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 110)
-            
-            Text(energy.name)
-                .font(.title)
-                .fontWeight(.bold)
-                .foregroundStyle(energy.color)
-            
-            Text(energy.title)
-                .font(.headline)
-                .foregroundStyle(.black)
-            
-            Text(energy.description)
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 24)
-            
-            VStack(spacing: 8) {
-                Text("Best for")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        ScrollView {
+            VStack(spacing: 18) {
+                Image(energy.assetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 120)
+                    .accessibilityHidden(true)
                 
-                Text(energy.bestFor)
-                    .font(.headline)
+                Text(energy.name)
+                    .font(.title)
+                    .fontWeight(.bold)
                     .foregroundStyle(energy.color)
+                    .multilineTextAlignment(.center)
+                
+                Text(energy.title)
+                    .font(.headline)
+                    .foregroundStyle(primaryTextColor)
+                    .multilineTextAlignment(.center)
+                
+                Text(energy.description)
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(secondaryTextColor)
+                    .padding(.horizontal, 24)
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                VStack(spacing: 8) {
+                    Text("Best for")
+                        .font(.caption)
+                        .foregroundStyle(secondaryTextColor)
+                    
+                    Text(energy.bestFor)
+                        .font(.headline)
+                        .foregroundStyle(energy.color)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, 8)
             }
-            .padding(.top, 8)
+            .padding(24)
         }
-        .padding()
+        .background(backgroundColor)
+        .presentationBackground(backgroundColor)
     }
 }
 
@@ -354,6 +444,24 @@ private struct CustomDurationSheet: View {
     @Binding var endDate: Date
     
     let onDone: () -> Void
+    
+    @Environment(\.colorScheme) private var colorScheme
+    
+    private var backgroundColor: Color {
+        Color("background")
+    }
+    
+    private var primaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 1.0, green: 0.97, blue: 0.90)
+        : .black
+    }
+    
+    private var secondaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.92, green: 0.88, blue: 0.78)
+        : .secondary
+    }
     
     private var durationDays: Int {
         let start = Calendar.current.startOfDay(for: startDate)
@@ -374,7 +482,8 @@ private struct CustomDurationSheet: View {
             Text("Custom duration")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundStyle(.black)
+                .foregroundStyle(primaryTextColor)
+                .fixedSize(horizontal: false, vertical: true)
             
             VStack(alignment: .leading, spacing: 14) {
                 DatePicker(
@@ -391,10 +500,12 @@ private struct CustomDurationSheet: View {
                 )
             }
             .font(.headline)
+            .foregroundStyle(primaryTextColor)
             
             Text("Your goal will last \(durationDays) days.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(secondaryTextColor)
+                .fixedSize(horizontal: false, vertical: true)
             
             Spacer()
             
@@ -406,7 +517,7 @@ private struct CustomDurationSheet: View {
                     .fontWeight(.bold)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 48)
+                    .frame(minHeight: 48)
                     .background(
                         Capsule()
                             .fill(Color.green)
@@ -414,6 +525,8 @@ private struct CustomDurationSheet: View {
             }
         }
         .padding(24)
+        .background(backgroundColor)
+        .presentationBackground(backgroundColor)
         .onChange(of: startDate) { _, newValue in
             if endDate < newValue {
                 endDate = newValue

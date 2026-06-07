@@ -9,17 +9,10 @@ import SwiftUI
 import SwiftData
 import WidgetKit
 
-private struct MyGoalWidgetData: Codable {
-    let id: String
-    let title: String
-    let completedDays: Int
-    let durationDays: Int
-    let energyRawValue: String
-}
-
 struct MyGoalsView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     
     @Query(sort: \Goal.createdAt, order: .reverse)
     private var goals: [Goal]
@@ -42,7 +35,6 @@ struct MyGoalsView: View {
                     VStack(spacing: 20) {
                         header
                         goalsList
-                        
                     }
                     .padding(.horizontal, 18)
                     .padding(.top, 24)
@@ -80,12 +72,30 @@ struct MyGoalsView: View {
     }
 }
 
+// MARK: - Colors
+
+private extension MyGoalsView {
+    
+    var primaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 1.0, green: 0.97, blue: 0.90)
+        : .black
+    }
+    
+    var secondaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.92, green: 0.88, blue: 0.78)
+        : .secondary
+    }
+}
+
 // MARK: - UI
 
 private extension MyGoalsView {
     
     var background: some View {
-        Color("background")
+        Image("AppBackground")
+            .resizable()
             .ignoresSafeArea()
     }
     
@@ -99,13 +109,13 @@ private extension MyGoalsView {
                 } label: {
                     Image(systemName: "exclamationmark.circle")
                         .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(.black)
+                        .foregroundStyle(primaryTextColor)
                 }
             }
             
             HStack(spacing: 4) {
                 Text("Your")
-                    .foregroundStyle(.black)
+                    .foregroundStyle(primaryTextColor)
                 
                 Text("Goals")
                     .foregroundStyle(Color.green)
@@ -116,7 +126,7 @@ private extension MyGoalsView {
             Text("Small steps today, big change tomorrow")
                 .font(.subheadline)
                 .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(secondaryTextColor)
         }
     }
     
@@ -158,7 +168,7 @@ private extension MyGoalsView {
                     Circle()
                         .fill(Color.green)
                 )
-                .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 5)
+                .shadow(color: .black.opacity(0.22), radius: 8, x: 0, y: 5)
         }
     }
     
@@ -204,25 +214,17 @@ private extension MyGoalsView {
     
     private func updateWidgetGoalsProgress() {
         let widgetGoals = goals.map { goal in
-            MyGoalWidgetData(
+            WidgetGoalProgress(
                 id: String(describing: goal.persistentModelID),
                 title: goal.subGoal,
                 completedDays: goal.completedDays,
                 durationDays: goal.durationDays,
-                energyRawValue: goal.selectedEnergy.rawValue
+                energyRawValue: goal.selectedEnergy.rawValue,
+                tasks: []
             )
         }
         
-        do {
-            let data = try JSONEncoder().encode(widgetGoals)
-            
-            let defaults = UserDefaults(suiteName: "group.com.Achivo.widget")
-            defaults?.set(data, forKey: "widgetGoalsProgress")
-            
-            WidgetCenter.shared.reloadAllTimelines()
-        } catch {
-            print("Failed to update widget goals:", error.localizedDescription)
-        }
+        AchivoWidgetSync.saveGoalsForWidget(widgetGoals)
     }
 }
 
@@ -233,9 +235,29 @@ private struct BadgeCelebrationPopup: View {
     let badge: AchievementBadge
     let onClose: () -> Void
     
+    @Environment(\.colorScheme) private var colorScheme
+    
+    private var popupBackgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.22, green: 0.22, blue: 0.19)
+        : .white
+    }
+    
+    private var primaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 1.0, green: 0.97, blue: 0.90)
+        : .black
+    }
+    
+    private var secondaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.92, green: 0.88, blue: 0.78)
+        : .secondary
+    }
+    
     var body: some View {
         ZStack {
-            Color.black.opacity(0.28)
+            Color.black.opacity(0.32)
                 .ignoresSafeArea()
             
             VStack(spacing: 16) {
@@ -249,14 +271,14 @@ private struct BadgeCelebrationPopup: View {
                     .padding(16)
                     .background(
                         Circle()
-                            .fill(Color.green.opacity(0.12))
+                            .fill(Color.green.opacity(colorScheme == .dark ? 0.22 : 0.12))
                     )
                 
                 VStack(spacing: 6) {
                     Text("New Badge Collected!")
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundStyle(.black)
+                        .foregroundStyle(primaryTextColor)
                     
                     Text(badge.name)
                         .font(.headline)
@@ -265,7 +287,8 @@ private struct BadgeCelebrationPopup: View {
                     
                     Text(badge.badgeDescription)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .fontWeight(.medium)
+                        .foregroundStyle(secondaryTextColor)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 8)
                 }
@@ -290,9 +313,9 @@ private struct BadgeCelebrationPopup: View {
             .frame(maxWidth: 310)
             .background(
                 RoundedRectangle(cornerRadius: 28)
-                    .fill(Color.white)
+                    .fill(popupBackgroundColor)
             )
-            .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 10)
+            .shadow(color: .black.opacity(0.22), radius: 18, x: 0, y: 10)
             .padding(.horizontal, 28)
         }
     }
@@ -303,6 +326,7 @@ private struct BadgeCelebrationPopup: View {
 private struct GoalCardView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     
     let goal: Goal
     let allGoals: [Goal]
@@ -345,10 +369,50 @@ private struct GoalCardView: View {
             RoundedRectangle(cornerRadius: 18)
                 .stroke(cardStroke, lineWidth: 1)
         )
-        .opacity(goal.goalStatus == .inactive ? 0.78 : 1)
+        .shadow(
+            color: colorScheme == .dark ? .black.opacity(0.18) : .black.opacity(0.06),
+            radius: 6,
+            x: 0,
+            y: 3
+        )
+        .opacity(goal.goalStatus == .inactive ? 0.82 : 1)
+    }
+}
+
+// MARK: - Goal Card Colors
+
+private extension GoalCardView {
+    
+    var primaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 1.0, green: 0.97, blue: 0.90)
+        : .black
     }
     
-    private var checkButton: some View {
+    var secondaryTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.92, green: 0.88, blue: 0.78)
+        : .secondary
+    }
+    
+    var inactiveTextColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.72, green: 0.70, blue: 0.64)
+        : .gray
+    }
+    
+    var progressTrackColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.24)
+        : Color.gray.opacity(0.15)
+    }
+}
+
+// MARK: - Goal Card UI
+
+private extension GoalCardView {
+    
+    var checkButton: some View {
         Button {
             toggleToday()
         } label: {
@@ -360,7 +424,7 @@ private struct GoalCardView: View {
         .disabled(goal.goalStatus != .active)
     }
     
-    private var checkIcon: String {
+    var checkIcon: String {
         if goal.goalStatus == .finished {
             return "checkmark.seal.fill"
         } else if goal.isDoneToday {
@@ -370,23 +434,23 @@ private struct GoalCardView: View {
         }
     }
     
-    private var checkColor: Color {
+    var checkColor: Color {
         switch goal.goalStatus {
         case .active:
-            return goal.isDoneToday ? energy.color : .black
+            return goal.isDoneToday ? energy.color : primaryTextColor
         case .inactive:
-            return .gray
+            return inactiveTextColor
         case .finished:
             return .green
         }
     }
     
-    private var topRow: some View {
+    var topRow: some View {
         HStack {
             Text(goal.subGoal)
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundStyle(.black)
+                .foregroundStyle(goal.goalStatus == .inactive ? inactiveTextColor : primaryTextColor)
                 .lineLimit(1)
             
             Spacer()
@@ -395,7 +459,7 @@ private struct GoalCardView: View {
         }
     }
     
-    private var statusBadge: some View {
+    var statusBadge: some View {
         Text(statusTitle)
             .font(.caption2)
             .fontWeight(.bold)
@@ -404,11 +468,11 @@ private struct GoalCardView: View {
             .padding(.vertical, 5)
             .background(
                 Capsule()
-                    .fill(statusColor.opacity(0.12))
+                    .fill(statusColor.opacity(colorScheme == .dark ? 0.22 : 0.12))
             )
     }
     
-    private var statusTitle: String {
+    var statusTitle: String {
         switch goal.goalStatus {
         case .active:
             return goal.isDoneToday ? "Done Today" : "Active"
@@ -419,25 +483,26 @@ private struct GoalCardView: View {
         }
     }
     
-    private var statusColor: Color {
+    var statusColor: Color {
         switch goal.goalStatus {
         case .active:
             return energy.color
         case .inactive:
-            return .gray
+            return inactiveTextColor
         case .finished:
             return .green
         }
     }
     
-    private var statusText: some View {
+    var statusText: some View {
         Text(statusMessage)
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .fontWeight(.medium)
+            .foregroundStyle(goal.goalStatus == .inactive ? inactiveTextColor : secondaryTextColor)
             .lineLimit(2)
     }
     
-    private var statusMessage: String {
+    var statusMessage: String {
         switch goal.goalStatus {
         case .active:
             return goal.isDoneToday ? "Great job! Come back tomorrow." : "\(goal.remainingDays) days remaining"
@@ -448,17 +513,18 @@ private struct GoalCardView: View {
         }
     }
     
-    private var progressText: some View {
+    var progressText: some View {
         Text("\(goal.completedDays) / \(goal.durationDays) Days")
             .font(.caption2)
+            .fontWeight(.bold)
             .foregroundStyle(goal.goalStatus == .finished ? .green : energy.color)
     }
     
-    private var progressBar: some View {
+    var progressBar: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.gray.opacity(0.15))
+                    .fill(progressTrackColor)
                 
                 Capsule()
                     .fill(goal.goalStatus == .finished ? Color.green : energy.color)
@@ -468,7 +534,7 @@ private struct GoalCardView: View {
         .frame(height: 7)
     }
     
-    private var activateButton: some View {
+    var activateButton: some View {
         Button {
             activateAgain()
         } label: {
@@ -490,29 +556,48 @@ private struct GoalCardView: View {
         .buttonStyle(.plain)
     }
     
-    private var cardBackground: Color {
+    var cardBackground: Color {
         switch goal.goalStatus {
         case .active:
-            return Color.white.opacity(0.82)
+            return colorScheme == .dark
+            ? Color(red: 0.22, green: 0.22, blue: 0.19)
+            : Color.white.opacity(0.82)
+            
         case .inactive:
-            return Color.gray.opacity(0.12)
+            return colorScheme == .dark
+            ? Color(red: 0.18, green: 0.18, blue: 0.16)
+            : Color.gray.opacity(0.12)
+            
         case .finished:
-            return Color.white.opacity(0.82)
+            return colorScheme == .dark
+            ? Color(red: 0.20, green: 0.23, blue: 0.18)
+            : Color.white.opacity(0.82)
         }
     }
     
-    private var cardStroke: Color {
+    var cardStroke: Color {
         switch goal.goalStatus {
         case .active:
-            return Color.black.opacity(0.12)
+            return colorScheme == .dark
+            ? Color.white.opacity(0.28)
+            : Color.black.opacity(0.12)
+            
         case .inactive:
-            return Color.gray.opacity(0.25)
+            return colorScheme == .dark
+            ? Color.white.opacity(0.18)
+            : Color.gray.opacity(0.25)
+            
         case .finished:
-            return Color.green.opacity(0.28)
+            return Color.green.opacity(colorScheme == .dark ? 0.45 : 0.28)
         }
     }
+}
+
+// MARK: - Goal Card Logic
+
+private extension GoalCardView {
     
-    private func toggleToday() {
+    func toggleToday() {
         guard goal.goalStatus == .active else { return }
         
         if goal.isDoneToday {
@@ -533,31 +618,96 @@ private struct GoalCardView: View {
         
         do {
             try modelContext.save()
-            WidgetCenter.shared.reloadAllTimelines()
+            syncWidgetAfterGoalChange()
         } catch {
             print("Failed to update goal:", error.localizedDescription)
         }
     }
     
-    private func activateAgain() {
+    func activateAgain() {
         goal.restartGoal()
         
         do {
             try modelContext.save()
-            WidgetCenter.shared.reloadAllTimelines()
+            syncWidgetAfterGoalChange()
         } catch {
             print("Failed to activate goal:", error.localizedDescription)
         }
     }
+    
+    func syncWidgetAfterGoalChange() {
+        let widgetGoals = allGoals.map { goal in
+            WidgetGoalProgress(
+                id: String(describing: goal.persistentModelID),
+                title: goal.subGoal,
+                completedDays: goal.completedDays,
+                durationDays: goal.durationDays,
+                energyRawValue: goal.selectedEnergy.rawValue,
+                tasks: []
+            )
+        }
+        
+        AchivoWidgetSync.saveGoalsForWidget(widgetGoals)
+    }
 }
+
+// MARK: - Preview
 
 #Preview {
     MyGoalsView()
-        .modelContainer(
-            for: [
-                Goal.self,
-                AchievementBadge.self
-            ],
-            inMemory: true
+        .modelContainer(sampleContainer)
+}
+
+@MainActor
+private var sampleContainer: ModelContainer {
+    do {
+        let container = try ModelContainer(
+            for: Goal.self, AchievementBadge.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
+        
+        let context = container.mainContext
+        
+        let goal1 = Goal(
+            title: "Reading Habit",
+            subGoal: "Read 10 pages",
+            durationDays: 10,
+            selectedEnergy: .bluey,
+            completedDays: 6
+        )
+        
+        let goal2 = Goal(
+            title: "Learn Swift",
+            subGoal: "Watch one Swift lesson",
+            durationDays: 7,
+            selectedEnergy: .greeny,
+            completedDays: 3
+        )
+        
+        let goal3 = Goal(
+            title: "Fitness Goal",
+            subGoal: "Walk for 20 minutes",
+            durationDays: 14,
+            selectedEnergy: .fiery,
+            completedDays: 14
+        )
+        
+        let goal4 = Goal(
+            title: "Positive Routine",
+            subGoal: "Write one grateful thing",
+            durationDays: 5,
+            selectedEnergy: .sunny,
+            completedDays: 1
+        )
+        
+        context.insert(goal1)
+        context.insert(goal2)
+        context.insert(goal3)
+        context.insert(goal4)
+        
+        return container
+        
+    } catch {
+        fatalError("Failed to create sample container: \(error.localizedDescription)")
+    }
 }
