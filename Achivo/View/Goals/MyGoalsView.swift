@@ -21,6 +21,13 @@ struct MyGoalsView: View {
     @State private var showGrowthEnergiesInfoView: Bool = false
     @State private var earnedBadge: AchievementBadge?
     
+    @State private var selectedGoal: Goal?
+    @State private var showGoalDetails: Bool = false
+    
+    @State private var goalToDelete: Goal?
+    @State private var goalToEdit: Goal?
+    @State private var showEditGoalDetails: Bool = false
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -61,6 +68,33 @@ struct MyGoalsView: View {
                     showGrowthEnergiesInfoView = false
                 }
             }
+            .navigationDestination(isPresented: $showEditGoalDetails) {
+                if let goalToEdit {
+                    GoalDetailsView(
+                        goal: goalToEdit,
+                        startInEditMode: true
+                    )
+                }
+            }
+            .navigationDestination(isPresented: $showGoalDetails) {
+                if let selectedGoal {
+                    GoalDetailsView(goal: selectedGoal)
+                }
+            }
+            .alert("Delete Goal?", isPresented: deleteAlertBinding) {
+                Button("Cancel", role: .cancel) {
+                    goalToDelete = nil
+                }
+                
+                Button("Delete", role: .destructive) {
+                    if let goalToDelete {
+                        deleteGoal(goalToDelete)
+                    }
+                    goalToDelete = nil
+                }
+            } message: {
+                Text("This goal will be permanently deleted.")
+            }
             .overlay {
                 if let earnedBadge {
                     BadgeCelebrationPopup(badge: earnedBadge) {
@@ -96,6 +130,7 @@ private extension MyGoalsView {
     var background: some View {
         Image("AppBackground")
             .resizable()
+            //.scaledToFill()
             .ignoresSafeArea()
     }
     
@@ -131,24 +166,59 @@ private extension MyGoalsView {
     }
     
     var goalsList: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 12) {
-                ForEach(sortedGoals) { goal in
-                    NavigationLink {
-                        GoalDetailsView(goal: goal)
-                    } label: {
-                        GoalCardView(
-                            goal: goal,
-                            allGoals: goals
-                        ) { badge in
-                            earnedBadge = badge
-                        }
+        List {
+            ForEach(sortedGoals) { goal in
+                Button {
+                    selectedGoal = goal
+                    showGoalDetails = true
+                } label: {
+                    GoalCardView(
+                        goal: goal,
+                        allGoals: goals
+                    ) { badge in
+                        earnedBadge = badge
                     }
-                    .buttonStyle(.plain)
+                }
+                .buttonStyle(.plain)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(
+                    EdgeInsets(
+                        top: 6,
+                        leading: 0,
+                        bottom: 6,
+                        trailing: 0
+                    )
+                )
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) {
+                        goalToDelete = goal
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                    
+                    Button {
+                        duplicateGoal(goal)
+                    } label: {
+                        Label("Duplicate", systemImage: "plus.square.on.square")
+                    }
+                    .tint(.blue)
+                }
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    Button {
+                        goalToEdit = goal
+                        showEditGoalDetails = true
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    .tint(.orange)
                 }
             }
-            .padding(.bottom, 110)
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Color.clear)
+        .padding(.bottom, 90)
         .overlay(alignment: .bottomTrailing) {
             addButton
                 .padding(.trailing, 4)
@@ -171,6 +241,11 @@ private extension MyGoalsView {
                 .shadow(color: .black.opacity(0.22), radius: 8, x: 0, y: 5)
         }
     }
+}
+
+// MARK: - Sorting + Widget
+
+private extension MyGoalsView {
     
     var sortedGoals: [Goal] {
         goals.sorted { first, second in
@@ -200,7 +275,20 @@ private extension MyGoalsView {
         .joined(separator: "|")
     }
     
-    private func refreshGoalStatuses() {
+    var deleteAlertBinding: Binding<Bool> {
+        Binding(
+            get: {
+                goalToDelete != nil
+            },
+            set: { newValue in
+                if !newValue {
+                    goalToDelete = nil
+                }
+            }
+        )
+    }
+    
+    func refreshGoalStatuses() {
         for goal in goals {
             goal.deactivateIfNeeded()
         }
@@ -212,7 +300,7 @@ private extension MyGoalsView {
         }
     }
     
-    private func updateWidgetGoalsProgress() {
+    func updateWidgetGoalsProgress() {
         let widgetGoals = goals.map { goal in
             WidgetGoalProgress(
                 id: String(describing: goal.persistentModelID),
@@ -225,6 +313,38 @@ private extension MyGoalsView {
         }
         
         AchivoWidgetSync.saveGoalsForWidget(widgetGoals)
+    }
+    
+    func deleteGoal(_ goal: Goal) {
+        modelContext.delete(goal)
+        
+        do {
+            try modelContext.save()
+            updateWidgetGoalsProgress()
+            WidgetCenter.shared.reloadAllTimelines()
+        } catch {
+            print("Failed to delete goal:", error.localizedDescription)
+        }
+    }
+    
+    func duplicateGoal(_ goal: Goal) {
+        let copiedGoal = Goal(
+            title: goal.title,
+            subGoal: goal.subGoal,
+            durationDays: goal.durationDays,
+            selectedEnergy: goal.selectedEnergy,
+            completedDays: 0
+        )
+        
+        modelContext.insert(copiedGoal)
+        
+        do {
+            try modelContext.save()
+            updateWidgetGoalsProgress()
+            WidgetCenter.shared.reloadAllTimelines()
+        } catch {
+            print("Failed to duplicate goal:", error.localizedDescription)
+        }
     }
 }
 

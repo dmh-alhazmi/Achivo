@@ -19,10 +19,26 @@ struct GoalDetailsView: View {
     
     @State private var earnedBadge: AchievementBadge?
     
+    @State private var isEditing: Bool
+    @State private var editTitle: String
+    @State private var editSubGoal: String
+    @State private var editDurationDays: Int
+    @State private var editEnergy: GrowthEnergy
+    
     let goal: Goal
     
+    init(goal: Goal, startInEditMode: Bool = false) {
+        self.goal = goal
+        
+        _isEditing = State(initialValue: startInEditMode)
+        _editTitle = State(initialValue: goal.title)
+        _editSubGoal = State(initialValue: goal.subGoal)
+        _editDurationDays = State(initialValue: goal.durationDays)
+        _editEnergy = State(initialValue: goal.selectedEnergy)
+    }
+    
     private var energy: GrowthEnergy {
-        goal.selectedEnergy
+        isEditing ? editEnergy : goal.selectedEnergy
     }
     
     private var progress: Double {
@@ -43,17 +59,37 @@ struct GoalDetailsView: View {
                     heroCard
                     progressCard
                     quickStatsGrid
-                    boostButton
-                    goalInfoCard
+                    
+                    if isEditing {
+                        editGoalCard
+                    } else {
+                        boostButton
+                        goalInfoCard
+                    }
                 }
                 .padding(.horizontal, 22)
                 .padding(.top, 20)
                 .padding(.bottom, 140)
             }
         }
-        .navigationTitle("Goal Details")
+        .navigationTitle(isEditing ? "Edit Goal" : "Goal Details")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(colorScheme, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    if isEditing {
+                        cancelEditing()
+                    } else {
+                        startEditing()
+                    }
+                } label: {
+                    Text(isEditing ? "Cancel" : "Edit")
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.green)
+                }
+            }
+        }
         .overlay {
             if let earnedBadge {
                 BadgeCelebrationPopup(badge: earnedBadge) {
@@ -63,8 +99,6 @@ struct GoalDetailsView: View {
         }
     }
 }
-
-// MARK: - Colors
 
 // MARK: - Colors
 
@@ -100,6 +134,18 @@ private extension GoalDetailsView {
         : Color.gray.opacity(0.14)
     }
     
+    var editFieldBackgroundColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.12)
+        : Color.white.opacity(0.72)
+    }
+    
+    var editFieldBorderColor: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.30)
+        : Color.black.opacity(0.14)
+    }
+    
     var dividerColor: Color {
         colorScheme == .dark
         ? Color.white.opacity(0.35)
@@ -131,7 +177,7 @@ private extension GoalDetailsView {
             }
             
             VStack(spacing: 6) {
-                Text(goal.subGoal)
+                Text(isEditing ? editSubGoal : goal.subGoal)
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundStyle(primaryTextColor)
@@ -163,19 +209,22 @@ private extension GoalDetailsView {
     
     var statusBadge: some View {
         HStack(spacing: 6) {
-            Image(systemName: goal.isFinished ? "checkmark.seal.fill" : "sparkles")
+            Image(systemName: isEditing ? "pencil.circle.fill" : goal.isFinished ? "checkmark.seal.fill" : "sparkles")
                 .font(.caption)
             
-            Text(goal.isFinished ? "Goal completed" : "Keep going")
+            Text(isEditing ? "Editing goal" : goal.isFinished ? "Goal completed" : "Keep going")
                 .font(.caption)
                 .fontWeight(.bold)
         }
-        .foregroundStyle(goal.isFinished ? .green : energy.color)
+        .foregroundStyle(isEditing ? Color.orange : goal.isFinished ? .green : energy.color)
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
         .background(
             Capsule()
-                .fill((goal.isFinished ? Color.green : energy.color).opacity(colorScheme == .dark ? 0.22 : 0.13))
+                .fill(
+                    (isEditing ? Color.orange : goal.isFinished ? Color.green : energy.color)
+                        .opacity(colorScheme == .dark ? 0.22 : 0.13)
+                )
         )
     }
     
@@ -433,6 +482,215 @@ private extension GoalDetailsView {
     }
 }
 
+// MARK: - Edit UI
+
+private extension GoalDetailsView {
+    
+    var editGoalCard: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Edit Goal")
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundStyle(primaryTextColor)
+            
+            editTextField(
+                title: "Main goal",
+                text: $editTitle,
+                placeholder: "e.g. Learn Swift"
+            )
+            
+            editTextField(
+                title: "Daily task",
+                text: $editSubGoal,
+                placeholder: "e.g. Watch one lesson"
+            )
+            
+            durationEditor
+            
+            energyEditor
+            
+            HStack(spacing: 12) {
+                Button {
+                    cancelEditing()
+                } label: {
+                    Text("Cancel")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(primaryTextColor)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(
+                            Capsule()
+                                .fill(trackColor)
+                        )
+                }
+                
+                Button {
+                    saveEditing()
+                } label: {
+                    Text("Save")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(
+                            Capsule()
+                                .fill(canSaveEdit ? Color.green : Color.gray.opacity(0.55))
+                        )
+                }
+                .disabled(!canSaveEdit)
+            }
+            .padding(.top, 6)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(cardBackgroundColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(cardBorderColor, lineWidth: 1)
+        )
+    }
+    
+    func editTextField(
+        title: String,
+        text: Binding<String>,
+        placeholder: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(secondaryTextColor)
+            
+            TextField(
+                "",
+                text: text,
+                prompt: Text(placeholder)
+                    .foregroundStyle(secondaryTextColor.opacity(0.75))
+            )
+            .font(.subheadline)
+            .fontWeight(.semibold)
+            .foregroundStyle(primaryTextColor)
+            .tint(Color.green)
+            .padding(.horizontal, 14)
+            .frame(height: 48)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(editFieldBackgroundColor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(editFieldBorderColor, lineWidth: 1)
+            )
+        }
+    }
+    
+    var durationEditor: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Duration")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(secondaryTextColor)
+            
+            Stepper(
+                value: $editDurationDays,
+                in: max(goal.completedDays, 1)...365
+            ) {
+                HStack {
+                    Text("\(editDurationDays) days")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(primaryTextColor)
+                    
+                    Spacer()
+                    
+                    if goal.completedDays > 0 {
+                        Text("Min \(goal.completedDays)")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(secondaryTextColor)
+                    }
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(editFieldBackgroundColor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(editFieldBorderColor, lineWidth: 1)
+            )
+        }
+    }
+    
+    var energyEditor: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Growth energy")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(secondaryTextColor)
+            
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ],
+                spacing: 10
+            ) {
+                ForEach(GrowthEnergy.allCases) { energy in
+                    Button {
+                        editEnergy = energy
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(energy.assetName)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 28, height: 28)
+                            
+                            Text(energy.name)
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(editEnergy == energy ? .white : energy.color)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(
+                                    editEnergy == energy
+                                    ? energy.color
+                                    : energy.color.opacity(colorScheme == .dark ? 0.20 : 0.12)
+                                )
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(
+                                    editEnergy == energy
+                                    ? energy.color
+                                    : energy.color.opacity(0.35),
+                                    lineWidth: 1
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+    
+    var canSaveEdit: Bool {
+        !editTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !editSubGoal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
 // MARK: - Badge Celebration Popup
 
 private struct BadgeCelebrationPopup: View {
@@ -522,6 +780,66 @@ private struct BadgeCelebrationPopup: View {
 // MARK: - Logic
 
 private extension GoalDetailsView {
+    
+    func startEditing() {
+        editTitle = goal.title
+        editSubGoal = goal.subGoal
+        editDurationDays = max(goal.durationDays, goal.completedDays, 1)
+        editEnergy = goal.selectedEnergy
+        
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            isEditing = true
+        }
+    }
+    
+    func cancelEditing() {
+        editTitle = goal.title
+        editSubGoal = goal.subGoal
+        editDurationDays = max(goal.durationDays, goal.completedDays, 1)
+        editEnergy = goal.selectedEnergy
+        
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            isEditing = false
+        }
+    }
+    
+    func saveEditing() {
+        let cleanTitle = editTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanSubGoal = editSubGoal.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !cleanTitle.isEmpty, !cleanSubGoal.isEmpty else { return }
+        
+        goal.title = cleanTitle
+        goal.subGoal = cleanSubGoal
+        goal.durationDays = max(editDurationDays, goal.completedDays, 1)
+        goal.selectedEnergyRawValue = editEnergy.rawValue
+        
+        do {
+            try modelContext.save()
+            syncWidgetAfterEditing()
+            
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                isEditing = false
+            }
+        } catch {
+            print("Failed to edit goal:", error.localizedDescription)
+        }
+    }
+    
+    func syncWidgetAfterEditing() {
+        let widgetGoals = goals.map { goal in
+            WidgetGoalProgress(
+                id: String(describing: goal.persistentModelID),
+                title: goal.subGoal,
+                completedDays: goal.completedDays,
+                durationDays: goal.durationDays,
+                energyRawValue: goal.selectedEnergy.rawValue,
+                tasks: []
+            )
+        }
+        
+        AchivoWidgetSync.saveGoalsForWidget(widgetGoals)
+    }
     
     func boostOneDay() {
         guard !goal.isFinished else { return }
