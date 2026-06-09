@@ -37,6 +37,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		267D02D52FD807FE00E67B28 /* AchivoWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AchivoWidgetExtension.entitlements; sourceTree = "<group>"; };
 		26E543392FB1C44F007C1F63 /* Achivo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Achivo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		26E543442FB1C959007C1F63 /* AchivoWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AchivoWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		26E543462FB1C959007C1F63 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -114,6 +115,7 @@
 		26E542E62FA740DF007C1F63 = {
 			isa = PBXGroup;
 			children = (
+				267D02D52FD807FE00E67B28 /* AchivoWidgetExtension.entitlements */,
 				26E542F12FA740DF007C1F63 /* Achivo */,
 				26E543392FB1C44F007C1F63 /* Achivo.app */,
 				26E543442FB1C959007C1F63 /* AchivoWidgetExtension.appex */,
@@ -204,6 +206,7 @@
 			knownRegions = (
 				en,
 				Base,
+				ar,
 			);
 			mainGroup = 26E542E62FA740DF007C1F63;
 			minimizedProjectReferenceProxies = 1;
@@ -319,6 +322,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -374,6 +378,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Release;
 		};
@@ -478,6 +483,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = AchivoWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YM2L953M9C;
@@ -510,6 +516,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = AchivoWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YM2L953M9C;

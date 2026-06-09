@@ -838,7 +838,7 @@ private extension GoalDetailsView {
             )
         }
         
-        AchivoWidgetSync.saveGoalsForWidget(widgetGoals)
+        AchivoWidgetDataMapper.syncGoals(goals)
     }
     
     func boostOneDay() {
@@ -868,7 +868,19 @@ private extension GoalDetailsView {
         
         do {
             try modelContext.save()
-            WidgetCenter.shared.reloadAllTimelines()
+            
+            AchivoWidgetDataMapper.syncGoals(goals)
+            
+            Task {
+                await AchivoLiveActivityManager.updateGoalLiveActivity(
+                    goalTitle: goal.title,
+                    progressPercent: Int(goal.progress * 100),
+                    completedTasks: goal.isCompletedToday ? 1 : 0,
+                    totalTasks: 1,
+                    energy: goal.selectedEnergy
+                )
+            }
+            
         } catch {
             print("Failed to boost goal:", error.localizedDescription)
         }

@@ -5,6 +5,7 @@
 //  Created by Deemah Alhazmi on 14/05/2026.
 //
 
+import WidgetKit
 import SwiftUI
 import SwiftData
 
@@ -350,6 +351,13 @@ private extension AddGoalView {
         do {
             try modelContext.save()
             
+            // IMPORTANT:
+            // This sends the new goal to the widget through App Group UserDefaults.
+            AchivoWidgetDataMapper.syncGoals([goal])
+            
+            // This refreshes the widget immediately.
+            WidgetCenter.shared.reloadAllTimelines()
+            
             Task {
                 await AchivoNotificationManager.scheduleDailyNotifications(
                     for: selectedEnergy
@@ -364,7 +372,6 @@ private extension AddGoalView {
         }
     }
 }
-
 // MARK: - Growth Energy Info Sheet
 
 private struct GrowthEnergyInfoSheet: View {

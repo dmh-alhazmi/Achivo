@@ -10,20 +10,27 @@ import Foundation
 import WidgetKit
 
 enum AchivoWidgetDataMapper {
-
+    
     static func syncGoals(_ goals: [Goal]) {
-
-        let widgetGoals = goals.map { goal in
+        let activeGoals = goals.filter { !$0.isFinished }
+        
+        let widgetGoals = activeGoals.map { goal in
             WidgetGoalProgress(
                 id: goal.idForWidget,
                 title: goal.title,
                 completedDays: goal.completedDays,
                 durationDays: goal.durationDays,
                 energyRawValue: goal.selectedEnergyRawValue,
-                tasks: []
+                tasks: [
+                    WidgetTaskProgress(
+                        id: "\(goal.idForWidget)-daily",
+                        title: goal.subGoal,
+                        isCompleted: goal.isCompletedToday
+                    )
+                ]
             )
         }
-
+        
         AchivoWidgetSync.saveGoalsForWidget(widgetGoals)
     }
 }
