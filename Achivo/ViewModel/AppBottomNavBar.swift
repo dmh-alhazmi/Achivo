@@ -75,9 +75,11 @@ struct AppBottomNavBar: View {
                         endPoint: .bottomTrailing
                     )
                 )
+                .background(.ultraThinMaterial.opacity(0.08))
+                .glassEffect(.clear)
             
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .fill(.ultraThinMaterial.opacity(0.22))
+//            RoundedRectangle(cornerRadius: 30, style: .continuous)
+//                .fill(.ultraThinMaterial.opacity(0.22))
         }
     }
     
@@ -189,3 +191,4 @@ private struct BottomNavItem: View {
         }
     }
 }
+

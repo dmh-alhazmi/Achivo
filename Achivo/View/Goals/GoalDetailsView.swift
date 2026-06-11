@@ -177,7 +177,7 @@ private extension GoalDetailsView {
             }
             
             VStack(spacing: 6) {
-                Text(isEditing ? editSubGoal : goal.subGoal)
+                Text(isEditing ? editTitle : goal.title)
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundStyle(primaryTextColor)
@@ -386,11 +386,11 @@ private extension GoalDetailsView {
                     .font(.title3)
                 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(goal.isFinished ? "Goal Completed" : "Boost +1 Day")
+                    Text(goal.isFinished ? "Goal Completed" : "Boost Today")
                         .font(.headline)
                         .fontWeight(.bold)
                     
-                    Text(goal.isFinished ? "You finished this journey" : "Use it when you did extra today")
+                    Text(goal.isFinished ? "You finished this journey" : "Complete all today’s tasks")
                         .font(.caption)
                         .fontWeight(.medium)
                 }
@@ -416,7 +416,7 @@ private extension GoalDetailsView {
                 y: 8
             )
         }
-        .disabled(goal.isFinished)
+        .disabled(goal.isFinished || goal.goalStatus != .active)
     }
     
     var goalInfoCard: some View {
@@ -437,7 +437,7 @@ private extension GoalDetailsView {
             
             infoRow(
                 icon: "checklist",
-                title: "Daily task",
+                title: "Daily tasks",
                 value: goal.subGoal
             )
         }
@@ -842,19 +842,10 @@ private extension GoalDetailsView {
     }
     
     func boostOneDay() {
+        guard goal.goalStatus == .active else { return }
         guard !goal.isFinished else { return }
         
-        goal.completedDays = min(goal.completedDays + 1, goal.durationDays)
-        
-        let today = Calendar.current.startOfDay(for: Date())
-        
-        let alreadyAdded = goal.completedDates.contains { date in
-            Calendar.current.isDate(date, inSameDayAs: today)
-        }
-        
-        if !alreadyAdded {
-            goal.completedDates.append(today)
-        }
+        goal.boostOneFullDay()
         
         let earnedBadges = BadgeAwardManager.awardBadgesIfNeeded(
             afterUpdating: goal,
@@ -870,13 +861,14 @@ private extension GoalDetailsView {
             try modelContext.save()
             
             AchivoWidgetDataMapper.syncGoals(goals)
+            WidgetCenter.shared.reloadAllTimelines()
             
             Task {
                 await AchivoLiveActivityManager.updateGoalLiveActivity(
                     goalTitle: goal.title,
                     progressPercent: Int(goal.progress * 100),
-                    completedTasks: goal.isCompletedToday ? 1 : 0,
-                    totalTasks: 1,
+                    completedTasks: goal.completedTaskCount,
+                    totalTasks: goal.totalTaskCount,
                     energy: goal.selectedEnergy
                 )
             }

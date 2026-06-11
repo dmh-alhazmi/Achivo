@@ -31,20 +31,46 @@ struct WidgetGoalProgress: Codable, Identifiable, Hashable {
 extension WidgetGoalProgress {
     
     var completedTaskCount: Int {
+        completedDays
+    }
+    
+    var totalTaskCount: Int {
+        max(durationDays, 0)
+    }
+    
+    var todayCompletedTaskCount: Int {
         tasks.filter { $0.isCompleted }.count
     }
     
+    var todayTotalTaskCount: Int {
+        tasks.count
+    }
+    
     var progress: Double {
-        if !tasks.isEmpty {
-            return Double(completedTaskCount) / Double(tasks.count)
-        }
-        
         guard durationDays > 0 else { return 0 }
-        return Double(completedDays) / Double(durationDays)
+        
+        let safeCompleted = min(max(completedDays, 0), durationDays)
+        return Double(safeCompleted) / Double(durationDays)
     }
     
     var progressPercent: Int {
-        min(max(Int(progress * 100), 0), 100)
+        min(max(Int((progress * 100).rounded()), 0), 100)
+    }
+    
+    var progressText: String {
+        "\(completedDays) / \(durationDays)"
+    }
+    
+    var progressStatusText: String {
+        if progress >= 1 {
+            return "Completed"
+        } else if progress >= 0.75 {
+            return "Almost there"
+        } else if progress >= 0.35 {
+            return "In progress"
+        } else {
+            return "Getting started"
+        }
     }
     
     var energy: GrowthEnergy {
@@ -78,6 +104,14 @@ extension AchivoWidgetAttributes.ContentState {
     var safeProgress: Int {
         min(max(progressPercent, 0), 100)
     }
+    
+    var safeCompletedTasks: Int {
+        min(max(completedTasks, 0), max(totalTasks, 0))
+    }
+    
+    var safeTotalTasks: Int {
+        max(totalTasks, 0)
+    }
 }
 
 // MARK: - Home Screen Widget Sync
@@ -88,11 +122,15 @@ enum AchivoWidgetSync {
     static let goalsKey = "widgetGoalsProgress"
     
     static func saveGoalsForWidget(_ goals: [WidgetGoalProgress]) {
-        let defaults = UserDefaults(suiteName: appGroupID)
+        guard let defaults = UserDefaults(suiteName: appGroupID) else {
+            print("Widget sync error: App Group UserDefaults not found.")
+            return
+        }
         
         do {
             let data = try JSONEncoder().encode(goals)
-            defaults?.set(data, forKey: goalsKey)
+            defaults.set(data, forKey: goalsKey)
+            defaults.synchronize()
             WidgetCenter.shared.reloadAllTimelines()
         } catch {
             print("Widget sync error:", error.localizedDescription)
@@ -122,7 +160,7 @@ enum AchivoLiveActivityManager {
         
         let state = AchivoWidgetAttributes.ContentState(
             goalTitle: goalTitle,
-            progressPercent: progressPercent,
+            progressPercent: min(max(progressPercent, 0), 100),
             completedTasks: completedTasks,
             totalTasks: totalTasks,
             energyRawValue: energy.rawValue
@@ -152,7 +190,7 @@ enum AchivoLiveActivityManager {
         
         let newState = AchivoWidgetAttributes.ContentState(
             goalTitle: goalTitle,
-            progressPercent: progressPercent,
+            progressPercent: min(max(progressPercent, 0), 100),
             completedTasks: completedTasks,
             totalTasks: totalTasks,
             energyRawValue: energy.rawValue

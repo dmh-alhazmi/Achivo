@@ -20,7 +20,8 @@ struct AddGoalView: View {
     @State private var showingCustomDatePicker: Bool = false
     
     @State private var goalTitle: String = ""
-    @State private var reminderAction: String = ""
+    @State private var subGoals: [String] = [""]
+    
     @State private var selectedDuration: GoalDuration = .oneWeek
     @State private var selectedEnergy: GrowthEnergy = .sunny
     
@@ -34,9 +35,15 @@ struct AddGoalView: View {
     @ScaledMetric(relativeTo: .body) private var textFieldMinHeight: CGFloat = 58
     @ScaledMetric(relativeTo: .body) private var durationButtonMinHeight: CGFloat = 38
     
+    private var cleanedSubGoals: [String] {
+        subGoals
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+    
     private var canCreateGoal: Bool {
         !goalTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !reminderAction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !cleanedSubGoals.isEmpty
     }
     
     private var finalDurationDays: Int {
@@ -106,15 +113,11 @@ private extension AddGoalView {
     }
     
     var primaryTextColor: Color {
-        colorScheme == .dark
-        ? /*Color(red: 1.0, green: 0.97, blue: 0.90)*/ .white
-        : .black
+        colorScheme == .dark ? .white : .black
     }
     
     var secondaryTextColor: Color {
-        colorScheme == .dark
-        ? /*Color(red: 0.92, green: 0.88, blue: 0.78)*/ .white
-        : .black.opacity(0.75)
+        colorScheme == .dark ? .white : .black.opacity(0.75)
     }
     
     var placeholderTextColor: Color {
@@ -174,15 +177,47 @@ private extension AddGoalView {
         VStack(spacing: 24) {
             textInput(
                 title: "What's your goal?",
-                placeholder: "e.g. Learn Swift, Read a Book...",
+                placeholder: "e.g. Lose 10 kg, Learn Swift...",
                 text: $goalTitle
             )
             
-            textInput(
-                title: "What should we remind you to do?",
-                placeholder: "e.g. Watch one lesson, Read 10 Pages...",
-                text: $reminderAction
-            )
+            subGoalsSection
+        }
+    }
+    
+    var subGoalsSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Add your small steps")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundStyle(primaryTextColor)
+                
+                Text("You can add up to 3 actions to help you reach your goal.")
+                    .font(.caption)
+                    .foregroundStyle(secondaryTextColor)
+            }
+            
+            VStack(spacing: 12) {
+                ForEach(subGoals.indices, id: \.self) { index in
+                    subGoalInput(index: index)
+                }
+            }
+            
+            if subGoals.count < 3 {
+                Button {
+                    subGoals.append("")
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                        Text("Add another step")
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.green)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 2)
+            }
         }
     }
     
@@ -290,6 +325,64 @@ private extension AddGoalView {
         }
     }
     
+    func subGoalInput(index: Int) -> some View {
+        HStack(spacing: 10) {
+            TextField(
+                "",
+                text: Binding(
+                    get: {
+                        subGoals[index]
+                    },
+                    set: { newValue in
+                        subGoals[index] = newValue
+                    }
+                ),
+                prompt: Text(subGoalPlaceholder(for: index))
+                    .foregroundStyle(placeholderTextColor),
+                axis: .vertical
+            )
+            .font(.subheadline)
+            .fontWeight(.medium)
+            .foregroundStyle(primaryTextColor)
+            .tint(Color.green)
+            .lineLimit(1...2)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(minHeight: textFieldMinHeight)
+            .background(fieldBackgroundColor)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(fieldBorderColor, lineWidth: 1)
+            )
+            
+            if subGoals.count > 1 {
+                Button {
+                    subGoals.remove(at: index)
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(Color.gray.opacity(0.8))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Remove step")
+            }
+        }
+    }
+    
+    func subGoalPlaceholder(for index: Int) -> String {
+        switch index {
+        case 0:
+            return "e.g. Walk every day for 1 hour"
+        case 1:
+            return "e.g. Eat healthy"
+        case 2:
+            return "e.g. Sleep early"
+        default:
+            return "Add a small step"
+        }
+    }
+    
     func durationButton(_ duration: GoalDuration) -> some View {
         let isSelected = selectedDuration == duration
         
@@ -340,7 +433,7 @@ private extension AddGoalView {
     func createGoal() {
         let goal = Goal(
             title: goalTitle.trimmingCharacters(in: .whitespacesAndNewlines),
-            subGoal: reminderAction.trimmingCharacters(in: .whitespacesAndNewlines),
+            subGoal: cleanedSubGoals.joined(separator: "\n"),
             durationDays: finalDurationDays,
             selectedEnergy: selectedEnergy,
             createdAt: goalStartDate
@@ -351,11 +444,7 @@ private extension AddGoalView {
         do {
             try modelContext.save()
             
-            // IMPORTANT:
-            // This sends the new goal to the widget through App Group UserDefaults.
             AchivoWidgetDataMapper.syncGoals([goal])
-            
-            // This refreshes the widget immediately.
             WidgetCenter.shared.reloadAllTimelines()
             
             Task {
@@ -372,6 +461,7 @@ private extension AddGoalView {
         }
     }
 }
+
 // MARK: - Growth Energy Info Sheet
 
 private struct GrowthEnergyInfoSheet: View {

@@ -42,6 +42,7 @@ struct MyGoalsView: View {
                     VStack(spacing: 20) {
                         header
                         goalsList
+                            .frame(maxHeight: .infinity)
                     }
                     .padding(.horizontal, 18)
                     .padding(.top, 24)
@@ -130,7 +131,6 @@ private extension MyGoalsView {
     var background: some View {
         Image("AppBackground")
             .resizable()
-            //.scaledToFill()
             .ignoresSafeArea()
     }
     
@@ -166,64 +166,76 @@ private extension MyGoalsView {
     }
     
     var goalsList: some View {
-        List {
-            ForEach(sortedGoals) { goal in
-                Button {
-                    selectedGoal = goal
-                    showGoalDetails = true
-                } label: {
+        ZStack(alignment: .bottomTrailing) {
+            List {
+                ForEach(sortedGoals) { goal in
                     GoalCardView(
                         goal: goal,
-                        allGoals: goals
-                    ) { badge in
-                        earnedBadge = badge
-                    }
-                }
-                .buttonStyle(.plain)
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .listRowInsets(
-                    EdgeInsets(
-                        top: 6,
-                        leading: 0,
-                        bottom: 6,
-                        trailing: 0
+                        allGoals: goals,
+                        onOpenDetails: {
+                            selectedGoal = goal
+                            showGoalDetails = true
+                        },
+                        onBadgeEarned: { badge in
+                            earnedBadge = badge
+                        }
                     )
-                )
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    Button(role: .destructive) {
-                        goalToDelete = goal
-                    } label: {
-                        Label("Delete", systemImage: "trash")
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(
+                        EdgeInsets(
+                            top: 6,
+                            leading: 0,
+                            bottom: 6,
+                            trailing: 0
+                        )
+                    )
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            goalToDelete = goal
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        
+                        Button {
+                            duplicateGoal(goal)
+                        } label: {
+                            Label("Duplicate", systemImage: "plus.square.on.square")
+                        }
+                        .tint(.blue)
                     }
-                    
-                    Button {
-                        duplicateGoal(goal)
-                    } label: {
-                        Label("Duplicate", systemImage: "plus.square.on.square")
+                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                        Button {
+                            goalToEdit = goal
+                            showEditGoalDetails = true
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(.orange)
                     }
-                    .tint(.blue)
-                }
-                .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                    Button {
-                        goalToEdit = goal
-                        showEditGoalDetails = true
-                    } label: {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                    .tint(.orange)
                 }
             }
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(Color.clear)
-        .padding(.bottom, 90)
-        .overlay(alignment: .bottomTrailing) {
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color.clear)
+            .contentMargins(.bottom, 110, for: .scrollContent)
+            
+            bottomFade
+            
             addButton
                 .padding(.trailing, 4)
-                .padding(.bottom, 100)
+                .padding(.bottom, 105)
         }
+    }
+    
+    var bottomFade: some View {
+        VStack {
+            Spacer()
+            
+            .frame(height: 120)
+            .allowsHitTesting(false)
+        }
+        .ignoresSafeArea(edges: .bottom)
     }
     
     var addButton: some View {
@@ -270,7 +282,7 @@ private extension MyGoalsView {
     
     var widgetRefreshToken: String {
         goals.map { goal in
-            "\(String(describing: goal.persistentModelID))-\(goal.subGoal)-\(goal.completedDays)-\(goal.durationDays)-\(goal.selectedEnergy.rawValue)-\(goal.isActive)-\(goal.isDoneToday)"
+            "\(String(describing: goal.persistentModelID))-\(goal.subGoal)-\(goal.completedTaskCount)-\(goal.totalTaskCount)-\(goal.completedDays)-\(goal.durationDays)-\(goal.selectedEnergy.rawValue)-\(goal.isActive)-\(goal.isDoneToday)"
         }
         .joined(separator: "|")
     }
@@ -304,15 +316,22 @@ private extension MyGoalsView {
         let widgetGoals = goals.map { goal in
             WidgetGoalProgress(
                 id: String(describing: goal.persistentModelID),
-                title: goal.subGoal,
-                completedDays: goal.completedDays,
-                durationDays: goal.durationDays,
+                title: goal.title,
+                completedDays: goal.completedTaskCount,
+                durationDays: goal.totalTaskCount,
                 energyRawValue: goal.selectedEnergy.rawValue,
-                tasks: []
+                tasks: goal.subGoalItems.enumerated().map { index, task in
+                    WidgetTaskProgress(
+                        id: "\(String(describing: goal.persistentModelID))-\(index)",
+                        title: task,
+                        isCompleted: goal.isSubGoalDoneToday(index: index)
+                    )
+                }
             )
         }
         
         AchivoWidgetSync.saveGoalsForWidget(widgetGoals)
+        WidgetCenter.shared.reloadAllTimelines()
     }
     
     func deleteGoal(_ goal: Goal) {
@@ -450,6 +469,7 @@ private struct GoalCardView: View {
     
     let goal: Goal
     let allGoals: [Goal]
+    let onOpenDetails: () -> Void
     let onBadgeEarned: (AchievementBadge) -> Void
     
     private var energy: GrowthEnergy {
@@ -458,23 +478,25 @@ private struct GoalCardView: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            HStack(spacing: 14) {
-                checkButton
-                
+            HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 10) {
                     topRow
                     statusText
+                    tasksList
                     progressText
                     progressBar
                 }
                 
-                Spacer()
-                
-                Image(energy.assetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 64, height: 64)
-                    .opacity(goal.goalStatus == .inactive ? 0.45 : 1)
+                Button {
+                    onOpenDetails()
+                } label: {
+                    Image(energy.assetName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 64, height: 64)
+                        .opacity(goal.goalStatus == .inactive ? 0.45 : 1)
+                }
+                .buttonStyle(.plain)
             }
             
             if goal.goalStatus == .inactive {
@@ -532,51 +554,96 @@ private extension GoalCardView {
 
 private extension GoalCardView {
     
-    var checkButton: some View {
-        Button {
-            toggleToday()
-        } label: {
-            Image(systemName: checkIcon)
-                .font(.title3)
-                .foregroundStyle(checkColor)
-        }
-        .buttonStyle(.plain)
-        .disabled(goal.goalStatus != .active)
-    }
-    
-    var checkIcon: String {
-        if goal.goalStatus == .finished {
-            return "checkmark.seal.fill"
-        } else if goal.isDoneToday {
-            return "checkmark.square.fill"
-        } else {
-            return "square"
-        }
-    }
-    
-    var checkColor: Color {
-        switch goal.goalStatus {
-        case .active:
-            return goal.isDoneToday ? energy.color : primaryTextColor
-        case .inactive:
-            return inactiveTextColor
-        case .finished:
-            return .green
-        }
-    }
-    
     var topRow: some View {
-        HStack {
-            Text(goal.subGoal)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundStyle(goal.goalStatus == .inactive ? inactiveTextColor : primaryTextColor)
-                .lineLimit(1)
+        HStack(alignment: .top) {
+            Button {
+                onOpenDetails()
+            } label: {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(goal.title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(goal.goalStatus == .inactive ? inactiveTextColor : primaryTextColor)
+                        .lineLimit(1)
+                    
+                    Text("Tap a task to check it")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(secondaryTextColor)
+                }
+            }
+            .buttonStyle(.plain)
             
             Spacer()
             
             statusBadge
         }
+    }
+    
+    var sortedSubGoalItems: [(index: Int, task: String)] {
+        Array(goal.subGoalItems.enumerated())
+            .map { (index: $0.offset, task: $0.element) }
+            .sorted { first, second in
+                let firstIsDone = goal.isSubGoalDoneToday(index: first.index)
+                let secondIsDone = goal.isSubGoalDoneToday(index: second.index)
+                
+                if firstIsDone == secondIsDone {
+                    return first.index < second.index
+                }
+                
+                return !firstIsDone && secondIsDone
+            }
+    }
+
+    var tasksList: some View {
+        VStack(spacing: 8) {
+            ForEach(sortedSubGoalItems, id: \.index) { item in
+                taskRow(index: item.index, task: item.task)
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: goal.completedTaskCount)
+    }
+    
+    func taskRow(index: Int, task: String) -> some View {
+        Button {
+            toggleTask(index: index)
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: goal.isSubGoalDoneToday(index: index) ? "checkmark.square.fill" : "square")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(goal.isSubGoalDoneToday(index: index) ? energy.color : secondaryTextColor)
+                
+                Text(task)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(goal.goalStatus == .inactive ? inactiveTextColor : primaryTextColor)
+                    .strikethrough(goal.isSubGoalDoneToday(index: index), color: secondaryTextColor)
+                    .lineLimit(2)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(
+                        goal.isSubGoalDoneToday(index: index)
+                        ? energy.color.opacity(colorScheme == .dark ? 0.20 : 0.10)
+                        : Color.clear
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        goal.isSubGoalDoneToday(index: index)
+                        ? energy.color.opacity(0.35)
+                        : Color.clear,
+                        lineWidth: 1
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(goal.goalStatus != .active)
     }
     
     var statusBadge: some View {
@@ -625,7 +692,9 @@ private extension GoalCardView {
     var statusMessage: String {
         switch goal.goalStatus {
         case .active:
-            return goal.isDoneToday ? "Great job! Come back tomorrow." : "\(goal.remainingDays) days remaining"
+            return goal.isDoneToday
+            ? "All tasks are done for today!"
+            : "\(goal.remainingDays) days remaining"
         case .inactive:
             return "Time ended. Activate it to start again."
         case .finished:
@@ -634,7 +703,7 @@ private extension GoalCardView {
     }
     
     var progressText: some View {
-        Text("\(goal.completedDays) / \(goal.durationDays) Days")
+        Text("\(goal.completedTaskCount) / \(goal.totalTaskCount) Tasks")
             .font(.caption2)
             .fontWeight(.bold)
             .foregroundStyle(goal.goalStatus == .finished ? .green : energy.color)
@@ -717,30 +786,28 @@ private extension GoalCardView {
 
 private extension GoalCardView {
     
-    func toggleToday() {
+    func toggleTask(index: Int) {
         guard goal.goalStatus == .active else { return }
         
-        if goal.isDoneToday {
-            goal.uncheckToday()
-        } else {
-            goal.checkToday()
-            
-            let earnedBadges = BadgeAwardManager.awardBadgesIfNeeded(
-                afterUpdating: goal,
-                allGoals: allGoals,
-                modelContext: modelContext
-            )
-            
-            if let firstBadge = earnedBadges.first {
-                onBadgeEarned(firstBadge)
-            }
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            goal.toggleSubGoalToday(index: index)
+        }
+        
+        let earnedBadges = BadgeAwardManager.awardBadgesIfNeeded(
+            afterUpdating: goal,
+            allGoals: allGoals,
+            modelContext: modelContext
+        )
+        
+        if let firstBadge = earnedBadges.first {
+            onBadgeEarned(firstBadge)
         }
         
         do {
             try modelContext.save()
             syncWidgetAfterGoalChange()
         } catch {
-            print("Failed to update goal:", error.localizedDescription)
+            print("Failed to update task:", error.localizedDescription)
         }
     }
     
@@ -759,15 +826,22 @@ private extension GoalCardView {
         let widgetGoals = allGoals.map { goal in
             WidgetGoalProgress(
                 id: String(describing: goal.persistentModelID),
-                title: goal.subGoal,
-                completedDays: goal.completedDays,
-                durationDays: goal.durationDays,
+                title: goal.title,
+                completedDays: goal.completedTaskCount,
+                durationDays: goal.totalTaskCount,
                 energyRawValue: goal.selectedEnergy.rawValue,
-                tasks: []
+                tasks: goal.subGoalItems.enumerated().map { index, task in
+                    WidgetTaskProgress(
+                        id: "\(String(describing: goal.persistentModelID))-\(index)",
+                        title: task,
+                        isCompleted: goal.isSubGoalDoneToday(index: index)
+                    )
+                }
             )
         }
         
         AchivoWidgetSync.saveGoalsForWidget(widgetGoals)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 
@@ -790,34 +864,34 @@ private var sampleContainer: ModelContainer {
         
         let goal1 = Goal(
             title: "Reading Habit",
-            subGoal: "Read 10 pages",
+            subGoal: "Read 10 pages\nWrite one note\nReview yesterday",
             durationDays: 10,
             selectedEnergy: .bluey,
-            completedDays: 6
+            completedDays: 0
         )
         
         let goal2 = Goal(
             title: "Learn Swift",
-            subGoal: "Watch one Swift lesson",
+            subGoal: "Watch one Swift lesson\nPractice code\nRead documentation",
             durationDays: 7,
             selectedEnergy: .greeny,
-            completedDays: 3
+            completedDays: 0
         )
         
         let goal3 = Goal(
             title: "Fitness Goal",
-            subGoal: "Walk for 20 minutes",
+            subGoal: "Walk for 20 minutes\nEat healthy\nSleep early",
             durationDays: 14,
             selectedEnergy: .fiery,
-            completedDays: 14
+            completedDays: 0
         )
         
         let goal4 = Goal(
             title: "Positive Routine",
-            subGoal: "Write one grateful thing",
+            subGoal: "Write one grateful thing\nDrink water\nStretch",
             durationDays: 5,
             selectedEnergy: .sunny,
-            completedDays: 1
+            completedDays: 0
         )
         
         context.insert(goal1)
